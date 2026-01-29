@@ -94,18 +94,24 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
             setRelayStatus(s);
         });
 
-        // ESC key to exit fullscreen
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
-                setIsFullscreen(false);
-            }
+        // Listen for fullscreen changes (ESC exits fullscreen automatically via browser)
+        const handleFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
         };
-        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
 
         return () => {
-            document.removeEventListener('keydown', handleKeyDown);
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
         };
     }, []);
+
+    const toggleFullscreen = async () => {
+        if (!document.fullscreenElement) {
+            await document.documentElement.requestFullscreen();
+        } else {
+            await document.exitFullscreen();
+        }
+    };
 
     const handleStart = async () => {
         await soundService.init();
@@ -193,7 +199,7 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
                         COMPOSE MESSAGE
                     </button>
                     <button
-                        onClick={() => setIsFullscreen(true)}
+                        onClick={toggleFullscreen}
                         className={`p-3 rounded-full font-mono font-bold tracking-wider shadow-lg active:scale-95 transition-all ${theme === 'dark' ? 'bg-[#222] text-white hover:bg-[#333]' : 'bg-white text-black hover:bg-gray-200'}`}
                         title="Fullscreen"
                     >

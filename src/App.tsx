@@ -5,33 +5,59 @@ import InputModal from './components/InputModal';
 import QRCodeModal from './components/QRCodeModal';
 import RemoteControl from './components/RemoteControl';
 import { soundService } from './services/soundService';
-import { relayService, RemoteCommand } from './services/relayService';
+import { connectionService, RemoteCommand, ConnectionMode } from './services/connectionService';
 
 const App: React.FC = () => {
     const [isRemoteMode, setIsRemoteMode] = useState(false);
     const [roomId, setRoomId] = useState<string | null>(null);
+    const [connectionMode, setConnectionMode] = useState<ConnectionMode>('websocket');
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const remoteParam = params.get('remote');
+        const modeParam = params.get('mode') as ConnectionMode | null;
+
         if (remoteParam) {
+            // Remote mode - parse connection mode from URL
             setIsRemoteMode(true);
-            relayService.connectToHost(remoteParam);
+            if (modeParam === 'peerjs' || modeParam === 'websocket') {
+                connectionService.setMode(modeParam);
+                setConnectionMode(modeParam);
+            }
+            connectionService.connectToHost(remoteParam);
         } else {
-            relayService.initHost().then(id => {
+            // Host mode - initialize with default mode
+            connectionService.setMode(connectionMode);
+            connectionService.initHost().then(id => {
                 setRoomId(id);
             });
         }
     }, []);
 
+    const handleModeChange = async (mode: ConnectionMode) => {
+        // Destroy all connections before switching modes
+        connectionService.destroyAll();
+        connectionService.setMode(mode);
+        setConnectionMode(mode);
+
+        const id = await connectionService.initHost();
+        setRoomId(id);
+    };
+
     if (isRemoteMode) {
-        return <RemoteControl />;
+        return <RemoteControl mode={connectionMode} />;
     }
 
-    return <HostApp roomId={roomId} />;
+    return <HostApp roomId={roomId} connectionMode={connectionMode} onModeChange={handleModeChange} />;
 };
 
-const HostApp: React.FC<{ roomId: string | null }> = ({ roomId }) => {
+interface HostAppProps {
+    roomId: string | null;
+    connectionMode: ConnectionMode;
+    onModeChange: (mode: ConnectionMode) => void;
+}
+
+const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange }) => {
     const [message, setMessage] = useState<string>("".padEnd(TOTAL_BITS, " "));
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isQRModalOpen, setIsQRModalOpen] = useState(false);
@@ -48,7 +74,7 @@ const HostApp: React.FC<{ roomId: string | null }> = ({ roomId }) => {
     };
 
     useEffect(() => {
-        relayService.onCommand((cmd: RemoteCommand) => {
+        connectionService.onCommand((cmd: RemoteCommand) => {
             const logIdx = new Date().toLocaleTimeString();
             setLastLog(`[${logIdx}] ${cmd.type}`);
 
@@ -63,7 +89,7 @@ const HostApp: React.FC<{ roomId: string | null }> = ({ roomId }) => {
             }
         });
 
-        relayService.onStatus((s) => {
+        connectionService.onStatus((s) => {
             setRelayStatus(s);
         });
     }, []);
@@ -100,12 +126,15 @@ const HostApp: React.FC<{ roomId: string | null }> = ({ roomId }) => {
         <div className={`min-h-screen flex flex-col items-center justify-center p-4 md:p-12 relative overflow-hidden transition-colors duration-500 ${theme === 'dark' ? 'bg-[#111]' : 'bg-[#e0e0e0]'}`}>
             <div className={`absolute inset-0 pointer-events-none z-0 opacity-80 ${theme === 'dark' ? 'bg-[radial-gradient(circle_at_center,_transparent_0%,_#000_100%)]' : 'bg-[radial-gradient(circle_at_center,_transparent_0%,_#ccc_100%)]'}`}></div>
 
-            {/* Debug Overlay */}
-            <div className="fixed bottom-4 left-4 z-50 bg-black/80 border border-gray-800 p-2 rounded text-[10px] font-mono text-gray-400 pointer-events-none text-left max-w-xs">
-                <p>ROOM: <span className="text-white">{roomId || 'Generating...'}</span></p>
-                <p>STATUS: <span className={relayStatus === 'connected' ? 'text-green-400' : 'text-yellow-400'}>{relayStatus}</span></p>
-                <p className="border-t border-gray-800 mt-1 pt-1 break-words">LOG: {lastLog}</p>
-            </div>
+            {/* Debug Overlay - Development Only */}
+            {!connectionService.isProduction() && (
+                <div className="fixed bottom-4 left-4 z-50 bg-black/80 border border-gray-800 p-2 rounded text-[10px] font-mono text-gray-400 pointer-events-none text-left max-w-xs">
+                    <p>MODE: <span className={connectionMode === 'peerjs' ? 'text-blue-400' : 'text-green-400'}>{connectionMode.toUpperCase()}</span></p>
+                    <p>ROOM: <span className="text-white">{roomId || 'Generating...'}</span></p>
+                    <p>STATUS: <span className={relayStatus === 'connected' ? 'text-green-400' : 'text-yellow-400'}>{relayStatus}</span></p>
+                    <p className="border-t border-gray-800 mt-1 pt-1 break-words">LOG: {lastLog}</p>
+                </div>
+            )}
 
             {/* Main Board Container */}
             <div className={`relative z-10 p-3 md:p-6 rounded-lg shadow-2xl border transition-colors duration-500 ${theme === 'dark' ? 'bg-[#080808] border-[#222]' : 'bg-[#f0f0f0] border-[#ccc]'}`}>
@@ -164,6 +193,8 @@ const HostApp: React.FC<{ roomId: string | null }> = ({ roomId }) => {
                 isOpen={isQRModalOpen}
                 onClose={() => setIsQRModalOpen(false)}
                 link={qrLink}
+                onModeChange={onModeChange}
+                currentMode={connectionMode}
             />
 
             <div className={`absolute top-4 right-4 font-mono text-xs tracking-widest pointer-events-none transition-colors duration-500 ${theme === 'dark' ? 'text-white/20' : 'text-black/20'}`}>

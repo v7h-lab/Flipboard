@@ -1,22 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { relayService } from '../services/relayService';
+import { connectionService, ConnectionMode } from '../services/connectionService';
 import { TOTAL_BITS } from '../constants';
 
-const RemoteControl: React.FC = () => {
+interface RemoteControlProps {
+    mode: ConnectionMode;
+}
+
+const RemoteControl: React.FC<RemoteControlProps> = ({ mode }) => {
     const [text, setText] = useState("");
     const [theme, setTheme] = useState<'dark' | 'light'>('dark');
     const [sound, setSound] = useState<'default' | 'mechanical'>('default');
     const [status, setStatus] = useState("connecting");
     const [logs, setLogs] = useState<string[]>([]);
 
+    const isProduction = connectionService.isProduction();
+
     const addLog = (msg: string) => {
         setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 10));
     };
 
     useEffect(() => {
+        addLog(`Mode: ${mode.toUpperCase()}`);
         addLog("Initializing Remote...");
 
-        relayService.onStatus((s) => {
+        connectionService.onStatus((s) => {
             setStatus(s);
             addLog(`Status: ${s}`);
         });
@@ -24,7 +31,7 @@ const RemoteControl: React.FC = () => {
         const params = new URLSearchParams(window.location.search);
         const roomId = params.get('remote');
         addLog(`Room: ${roomId || 'MISSING'}`);
-    }, []);
+    }, [mode]);
 
     const handleUpdate = (e: React.FormEvent) => {
         e.preventDefault();
@@ -35,32 +42,38 @@ const RemoteControl: React.FC = () => {
         }
 
         addLog(`Sending: ${text}`);
-        relayService.sendCommand({ type: 'UPDATE_MESSAGE', payload: text.padEnd(TOTAL_BITS, ' ') });
+        connectionService.sendCommand({ type: 'UPDATE_MESSAGE', payload: text.padEnd(TOTAL_BITS, ' ') });
         setText("");
     };
 
     const handleTheme = (t: 'dark' | 'light') => {
         if (status !== 'connected') return;
         setTheme(t);
-        relayService.sendCommand({ type: 'SET_THEME', payload: t });
+        connectionService.sendCommand({ type: 'SET_THEME', payload: t });
         addLog(`Theme: ${t}`);
     };
 
     const handleSound = (s: 'default' | 'mechanical') => {
         if (status !== 'connected') return;
         setSound(s);
-        relayService.sendCommand({ type: 'SET_SOUND', payload: s });
+        connectionService.sendCommand({ type: 'SET_SOUND', payload: s });
         addLog(`Sound: ${s}`);
     };
 
     return (
         <div className="min-h-screen bg-black text-white p-6 font-mono flex flex-col items-center">
-            <h1 className="text-2xl font-bold mb-8 tracking-widest text-[#333]">FLIP.REMOTE</h1>
+            <h1 className="text-2xl font-bold mb-4 tracking-widest text-[#333]">FLIP.REMOTE</h1>
+
+            {/* Mode Badge */}
+            <div className={`mb-4 px-3 py-1 rounded text-[10px] font-bold tracking-wider ${mode === 'peerjs' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50' : 'bg-green-500/20 text-green-400 border border-green-500/50'
+                }`}>
+                {mode === 'peerjs' ? '🔗 PEERJS MODE' : '📡 WEBSOCKET MODE'}
+            </div>
 
             {/* Status Indicator */}
             <div className={`mb-8 px-4 py-2 rounded-full text-xs font-bold tracking-wider flex items-center gap-2 ${status === 'connected' ? 'bg-green-500/20 text-green-400 border border-green-500/50' :
-                    status === 'error' ? 'bg-red-500/20 text-red-400 border border-red-500/50' :
-                        'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50'
+                status === 'error' || status.includes('error') ? 'bg-red-500/20 text-red-400 border border-red-500/50' :
+                    'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50'
                 }`}>
                 <div className={`w-2 h-2 rounded-full ${status === 'connected' ? 'bg-green-400 animate-pulse' : 'bg-yellow-400'}`}></div>
                 STATUS: {status.toUpperCase()}
@@ -89,8 +102,8 @@ const RemoteControl: React.FC = () => {
                     type="submit"
                     disabled={status !== 'connected'}
                     className={`w-full font-black text-lg py-4 rounded-lg active:scale-95 transition-all ${status === 'connected'
-                            ? 'bg-white text-black'
-                            : 'bg-[#333] text-gray-500 cursor-not-allowed'
+                        ? 'bg-white text-black'
+                        : 'bg-[#333] text-gray-500 cursor-not-allowed'
                         }`}
                 >
                     {status === 'connected' ? 'SEND TO BOARD' : 'CONNECTING...'}
@@ -115,10 +128,12 @@ const RemoteControl: React.FC = () => {
                 </div>
             </div>
 
-            {/* DEBUG LOGS */}
-            <div className="w-full max-w-md mt-8 p-4 bg-[#0a0a0a] border border-[#222] rounded-lg font-mono text-[10px] text-gray-500 whitespace-pre-wrap h-32 overflow-y-auto">
-                {logs.map((log, i) => <div key={i}>{log}</div>)}
-            </div>
+            {/* DEBUG LOGS - Development Only */}
+            {!isProduction && (
+                <div className="w-full max-w-md mt-8 p-4 bg-[#0a0a0a] border border-[#222] rounded-lg font-mono text-[10px] text-gray-500 whitespace-pre-wrap h-32 overflow-y-auto">
+                    {logs.map((log, i) => <div key={i}>{log}</div>)}
+                </div>
+            )}
         </div>
     );
 };

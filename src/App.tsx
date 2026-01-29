@@ -18,13 +18,13 @@ const App: React.FC = () => {
         const modeParam = params.get('mode') as ConnectionMode | null;
 
         if (remoteParam) {
-            // Remote mode - parse connection mode from URL
+            // Remote mode - just set up the mode, connection will be handled by RemoteControl
             setIsRemoteMode(true);
             if (modeParam === 'peerjs' || modeParam === 'websocket') {
                 connectionService.setMode(modeParam);
                 setConnectionMode(modeParam);
             }
-            connectionService.connectToHost(remoteParam);
+            // Don't call connectToHost here - RemoteControl will do it after mounting
         } else {
             // Host mode - initialize with default mode
             connectionService.setMode(connectionMode);

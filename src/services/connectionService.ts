@@ -46,6 +46,12 @@ class ConnectionService {
     }
 
     public setMode(mode: ConnectionMode) {
+        // In production, always use PeerJS - WebSocket relay only works with dev server
+        if (isProduction && mode === 'websocket') {
+            this.log('Production detected - forcing PeerJS mode (WebSocket relay unavailable)');
+            mode = 'peerjs';
+        }
+
         this.log(`Setting mode to: ${mode}`);
         this.mode = mode;
         // Re-register callbacks with the new service

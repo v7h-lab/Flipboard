@@ -23,14 +23,23 @@ const RemoteControl: React.FC<RemoteControlProps> = ({ mode }) => {
         addLog(`Mode: ${mode.toUpperCase()}`);
         addLog("Initializing Remote...");
 
+        // Register callbacks first
         connectionService.onStatus((s) => {
             setStatus(s);
             addLog(`Status: ${s}`);
         });
 
+        // Get room ID from URL and connect
         const params = new URLSearchParams(window.location.search);
         const roomId = params.get('remote');
         addLog(`Room: ${roomId || 'MISSING'}`);
+
+        if (roomId) {
+            addLog("Connecting to host...");
+            connectionService.connectToHost(roomId).catch((err) => {
+                addLog(`Connection error: ${err.message || err}`);
+            });
+        }
     }, [mode]);
 
     const handleUpdate = (e: React.FormEvent) => {

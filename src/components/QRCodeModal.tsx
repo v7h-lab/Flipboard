@@ -62,8 +62,8 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, link, onMode
                             <button
                                 onClick={() => handleModeToggle('websocket')}
                                 className={`flex-1 py-2 px-3 rounded text-xs font-mono font-bold transition-all ${currentMode === 'websocket'
-                                        ? 'bg-green-500 text-black'
-                                        : 'bg-[#333] text-gray-400 hover:bg-[#444]'
+                                    ? 'bg-green-500 text-black'
+                                    : 'bg-[#333] text-gray-400 hover:bg-[#444]'
                                     }`}
                             >
                                 WebSocket
@@ -72,8 +72,8 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, link, onMode
                             <button
                                 onClick={() => handleModeToggle('peerjs')}
                                 className={`flex-1 py-2 px-3 rounded text-xs font-mono font-bold transition-all ${currentMode === 'peerjs'
-                                        ? 'bg-blue-500 text-black'
-                                        : 'bg-[#333] text-gray-400 hover:bg-[#444]'
+                                    ? 'bg-blue-500 text-black'
+                                    : 'bg-[#333] text-gray-400 hover:bg-[#444]'
                                     }`}
                             >
                                 PeerJS
@@ -88,14 +88,7 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, link, onMode
                     </div>
                 )}
 
-                {/* Production mode indicator */}
-                {isProduction && (
-                    <div className="w-full mb-4 text-center">
-                        <span className="inline-block px-3 py-1 bg-blue-500/20 text-blue-400 text-xs font-mono rounded-full border border-blue-500/50">
-                            🔗 PeerJS Connection
-                        </span>
-                    </div>
-                )}
+
 
                 <div className="bg-white p-4 rounded-lg mb-6 shadow-[0_0_20px_rgba(255,255,255,0.1)]">
                     <QRCodeSVG value={fullQrUrl} size={200} level="H" />

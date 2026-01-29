@@ -73,11 +73,13 @@ const RemoteControl: React.FC<RemoteControlProps> = ({ mode }) => {
         <div className="min-h-screen bg-black text-white p-6 font-mono flex flex-col items-center">
             <h1 className="text-2xl font-bold mb-4 tracking-widest text-[#333]">FLIP.REMOTE</h1>
 
-            {/* Mode Badge */}
-            <div className={`mb-4 px-3 py-1 rounded text-[10px] font-bold tracking-wider ${mode === 'peerjs' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50' : 'bg-green-500/20 text-green-400 border border-green-500/50'
-                }`}>
-                {mode === 'peerjs' ? '🔗 PEERJS MODE' : '📡 WEBSOCKET MODE'}
-            </div>
+            {/* Mode Badge - Development Only */}
+            {!isProduction && (
+                <div className={`mb-4 px-3 py-1 rounded text-[10px] font-bold tracking-wider ${mode === 'peerjs' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50' : 'bg-green-500/20 text-green-400 border border-green-500/50'
+                    }`}>
+                    {mode === 'peerjs' ? '🔗 PEERJS MODE' : '📡 WEBSOCKET MODE'}
+                </div>
+            )}
 
             {/* Status Indicator */}
             <div className={`mb-8 px-4 py-2 rounded-full text-xs font-bold tracking-wider flex items-center gap-2 ${status === 'connected' ? 'bg-green-500/20 text-green-400 border border-green-500/50' :

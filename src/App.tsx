@@ -63,6 +63,7 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
     const [isQRModalOpen, setIsQRModalOpen] = useState(false);
     const [hasStarted, setHasStarted] = useState(false);
     const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+    const [isFullscreen, setIsFullscreen] = useState(false);
 
     const [lastLog, setLastLog] = useState<string>("Waiting...");
     const [relayStatus, setRelayStatus] = useState<string>("Initializing...");
@@ -92,6 +93,18 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
         connectionService.onStatus((s) => {
             setRelayStatus(s);
         });
+
+        // ESC key to exit fullscreen
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setIsFullscreen(false);
+            }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+        };
     }, []);
 
     const handleStart = async () => {
@@ -126,8 +139,8 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
         <div className={`min-h-screen flex flex-col items-center justify-center p-4 md:p-12 relative overflow-hidden transition-colors duration-500 ${theme === 'dark' ? 'bg-[#111]' : 'bg-[#e0e0e0]'}`}>
             <div className={`absolute inset-0 pointer-events-none z-0 opacity-80 ${theme === 'dark' ? 'bg-[radial-gradient(circle_at_center,_transparent_0%,_#000_100%)]' : 'bg-[radial-gradient(circle_at_center,_transparent_0%,_#ccc_100%)]'}`}></div>
 
-            {/* Debug Overlay - Development Only */}
-            {!connectionService.isProduction() && (
+            {/* Debug Overlay - Development Only, Hidden in Fullscreen */}
+            {!connectionService.isProduction() && !isFullscreen && (
                 <div className="fixed bottom-4 left-4 z-50 bg-black/80 border border-gray-800 p-2 rounded text-[10px] font-mono text-gray-400 pointer-events-none text-left max-w-xs">
                     <p>MODE: <span className={connectionMode === 'peerjs' ? 'text-blue-400' : 'text-green-400'}>{connectionMode.toUpperCase()}</span></p>
                     <p>ROOM: <span className="text-white">{roomId || 'Generating...'}</span></p>
@@ -162,23 +175,32 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
                 </div>
             </div>
 
-            {/* Controls */}
-            <div className="fixed bottom-8 z-20 flex gap-4">
-                <button
-                    onClick={() => setIsQRModalOpen(true)}
-                    className={`p-3 rounded-full font-mono font-bold tracking-wider shadow-lg active:scale-95 transition-all flex items-center gap-2 ${theme === 'dark' ? 'bg-[#222] text-white hover:bg-[#333]' : 'bg-white text-black hover:bg-gray-200'}`}
-                    title="Connect Remote"
-                >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
-                    <span className="hidden md:inline">REMOTE</span>
-                </button>
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className={`px-8 py-3 rounded-full font-mono font-bold tracking-wider shadow-lg active:scale-95 transition-all ${theme === 'dark' ? 'bg-white text-black hover:bg-gray-200' : 'bg-black text-white hover:bg-gray-800'}`}
-                >
-                    COMPOSE MESSAGE
-                </button>
-            </div>
+            {/* Controls - Hidden in fullscreen */}
+            {!isFullscreen && (
+                <div className="fixed bottom-8 z-20 flex gap-4">
+                    <button
+                        onClick={() => setIsQRModalOpen(true)}
+                        className={`p-3 rounded-full font-mono font-bold tracking-wider shadow-lg active:scale-95 transition-all flex items-center gap-2 ${theme === 'dark' ? 'bg-[#222] text-white hover:bg-[#333]' : 'bg-white text-black hover:bg-gray-200'}`}
+                        title="Connect Remote"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
+                        <span className="hidden md:inline">REMOTE</span>
+                    </button>
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className={`px-8 py-3 rounded-full font-mono font-bold tracking-wider shadow-lg active:scale-95 transition-all ${theme === 'dark' ? 'bg-white text-black hover:bg-gray-200' : 'bg-black text-white hover:bg-gray-800'}`}
+                    >
+                        COMPOSE MESSAGE
+                    </button>
+                    <button
+                        onClick={() => setIsFullscreen(true)}
+                        className={`p-3 rounded-full font-mono font-bold tracking-wider shadow-lg active:scale-95 transition-all ${theme === 'dark' ? 'bg-[#222] text-white hover:bg-[#333]' : 'bg-white text-black hover:bg-gray-200'}`}
+                        title="Fullscreen"
+                    >
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                    </button>
+                </div>
+            )}
 
             <InputModal
                 isOpen={isModalOpen}
@@ -197,9 +219,12 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
                 currentMode={connectionMode}
             />
 
-            <div className={`absolute top-4 right-4 font-mono text-xs tracking-widest pointer-events-none transition-colors duration-500 ${theme === 'dark' ? 'text-white/20' : 'text-black/20'}`}>
-                V.1.0 // ONLINE
-            </div>
+            {/* Version Text - Hidden in Fullscreen */}
+            {!isFullscreen && (
+                <div className={`absolute top-4 right-4 font-mono text-xs tracking-widest pointer-events-none transition-colors duration-500 ${theme === 'dark' ? 'text-white/20' : 'text-black/20'}`}>
+                    V.1.0 // ONLINE
+                </div>
+            )}
         </div>
     );
 };

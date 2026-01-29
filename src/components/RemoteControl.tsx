@@ -29,17 +29,40 @@ const RemoteControl: React.FC<RemoteControlProps> = ({ mode }) => {
             addLog(`Status: ${s}`);
         });
 
-        // Get room ID from URL and connect
+        // Get room ID from URL
         const params = new URLSearchParams(window.location.search);
         const roomId = params.get('remote');
         addLog(`Room: ${roomId || 'MISSING'}`);
 
-        if (roomId) {
-            addLog("Connecting to host...");
-            connectionService.connectToHost(roomId).catch((err) => {
-                addLog(`Connection error: ${err.message || err}`);
-            });
-        }
+        const connectToRoom = () => {
+            if (roomId) {
+                addLog("Connecting to host...");
+                connectionService.connectToHost(roomId).catch((err) => {
+                    addLog(`Connection error: ${err.message || err}`);
+                });
+            }
+        };
+
+        // Initial connection
+        connectToRoom();
+
+        // Auto-reconnect when tab becomes visible again
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                const currentStatus = connectionService.status;
+                if (currentStatus !== 'connected' && currentStatus !== 'connecting') {
+                    addLog("Tab visible - reconnecting...");
+                    connectionService.destroyAll();
+                    setTimeout(connectToRoom, 500); // Small delay before reconnecting
+                }
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
     }, [mode]);
 
     const handleUpdate = (e: React.FormEvent) => {

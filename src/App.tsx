@@ -65,6 +65,7 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
     const [hasStarted, setHasStarted] = useState(false);
     const [theme, setTheme] = useState<'dark' | 'light'>('dark');
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [liveClockInterval, setLiveClockInterval] = useState<ReturnType<typeof setInterval> | null>(null);
 
     const [lastLog, setLastLog] = useState<string>("Waiting...");
     const [relayStatus, setRelayStatus] = useState<string>("Initializing...");
@@ -80,6 +81,34 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
     const handleBoardUpdate = (newBoard: BoardState) => {
         setBoard(newBoard);
         setMessage(boardToString(newBoard));
+    };
+
+    const handleStartLiveClock = (generator: () => BoardState) => {
+        // Stop any existing clock
+        if (liveClockInterval) {
+            clearInterval(liveClockInterval);
+        }
+
+        // Start clock mode - update every second
+        setHasStarted(true);
+        const clockBoard = generator();
+        setBoard(clockBoard);
+        setMessage(boardToString(clockBoard));
+
+        const interval = setInterval(() => {
+            const newBoard = generator();
+            setBoard(newBoard);
+            setMessage(boardToString(newBoard));
+        }, 1000);
+
+        setLiveClockInterval(interval);
+    };
+
+    const handleStopLiveClock = () => {
+        if (liveClockInterval) {
+            clearInterval(liveClockInterval);
+            setLiveClockInterval(null);
+        }
     };
 
     useEffect(() => {
@@ -207,12 +236,21 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
                         <span className="hidden md:inline">REMOTE</span>
                     </button>
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className={`px-8 py-3 rounded-full font-mono font-bold tracking-wider shadow-lg active:scale-95 transition-all ${theme === 'dark' ? 'bg-white text-black hover:bg-gray-200' : 'bg-black text-white hover:bg-gray-800'}`}
-                    >
-                        COMPOSE MESSAGE
-                    </button>
+                    {liveClockInterval ? (
+                        <button
+                            onClick={handleStopLiveClock}
+                            className="px-8 py-3 rounded-full font-mono font-bold tracking-wider shadow-lg active:scale-95 transition-all bg-red-600 text-white hover:bg-red-500 animate-pulse"
+                        >
+                            ⏹ STOP CLOCK
+                        </button>
+                    ) : (
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className={`px-8 py-3 rounded-full font-mono font-bold tracking-wider shadow-lg active:scale-95 transition-all ${theme === 'dark' ? 'bg-white text-black hover:bg-gray-200' : 'bg-black text-white hover:bg-gray-800'}`}
+                        >
+                            COMPOSE MESSAGE
+                        </button>
+                    )}
                     <button
                         onClick={toggleFullscreen}
                         className={`p-3 rounded-full font-mono font-bold tracking-wider shadow-lg active:scale-95 transition-all ${theme === 'dark' ? 'bg-[#222] text-white hover:bg-[#333]' : 'bg-white text-black hover:bg-gray-200'}`}
@@ -226,8 +264,9 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
             <InputModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                onUpdate={handleUpdate}
-                onBoardUpdate={handleBoardUpdate}
+                onUpdate={(msg) => { handleStopLiveClock(); handleUpdate(msg); }}
+                onBoardUpdate={(b) => { handleStopLiveClock(); handleBoardUpdate(b); }}
+                onStartLiveClock={handleStartLiveClock}
                 currentMessage={message}
                 currentBoard={board}
                 theme={theme}

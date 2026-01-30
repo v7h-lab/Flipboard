@@ -9,6 +9,7 @@ interface InputModalProps {
     onClose: () => void;
     onUpdate: (message: string) => void;
     onBoardUpdate?: (board: BoardState) => void;
+    onStartLiveClock?: (generator: () => BoardState) => void; // For live clock mode
     currentMessage: string;
     currentBoard?: BoardState;
     theme: 'dark' | 'light';
@@ -22,6 +23,7 @@ const InputModal: React.FC<InputModalProps> = ({
     onClose,
     onUpdate,
     onBoardUpdate,
+    onStartLiveClock,
     currentMessage,
     currentBoard,
     theme,
@@ -64,6 +66,20 @@ const InputModal: React.FC<InputModalProps> = ({
     const handleTemplateSelect = (templateBoard: BoardState) => {
         setBoard(templateBoard);
         setText(boardToString(templateBoard).trimEnd());
+        soundService.playClick();
+    };
+
+    const handleLiveTemplate = (generator: () => BoardState) => {
+        // Start the live clock mode
+        if (onStartLiveClock) {
+            onStartLiveClock(generator);
+            onClose(); // Close modal and let the clock run
+        } else {
+            // Fallback: just apply current time once
+            const clockBoard = generator();
+            setBoard(clockBoard);
+            setText(boardToString(clockBoard).trimEnd());
+        }
         soundService.playClick();
     };
 
@@ -154,6 +170,7 @@ const InputModal: React.FC<InputModalProps> = ({
                     {activeTab === 'templates' && (
                         <TemplateLibrary
                             onSelect={handleTemplateSelect}
+                            onSelectLive={handleLiveTemplate}
                             currentBoard={board}
                             onSaveCustom={(_name, _b) => {
                                 // Template is saved internally by TemplateLibrary

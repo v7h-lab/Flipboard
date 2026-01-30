@@ -5,6 +5,7 @@ export interface Template {
     name: string;
     category: 'greetings' | 'patterns' | 'icons' | 'time' | 'custom';
     board: BoardState;
+    isLive?: boolean; // For templates that update dynamically
 }
 
 // Helper to create a template from a string
@@ -16,7 +17,7 @@ const t = (id: string, name: string, category: Template['category'], text: strin
 });
 
 // Helper to create pattern templates with colors
-const colorPattern = (id: string, name: string, pattern: string[]): Template => {
+const colorPattern = (id: string, name: string, pattern: string[], category: Template['category'] = 'patterns'): Template => {
     const board = createEmptyBoard();
     for (let row = 0; row < ROWS && row < pattern.length; row++) {
         for (let col = 0; col < COLS && col < pattern[row].length; col++) {
@@ -29,10 +30,55 @@ const colorPattern = (id: string, name: string, pattern: string[]): Template => 
             else if (char === 'V') board[row][col] = { char: ' ', color: '[V]' };
             else if (char === 'W') board[row][col] = { char: ' ', color: '[W]' };
             else if (char === 'P') board[row][col] = { char: ' ', color: '[P]' };
-            else board[row][col] = { char: ' ' };
+            else board[row][col] = { char: char !== ' ' ? char : ' ' };
         }
     }
-    return { id, name, category: 'patterns', board };
+    return { id, name, category, board };
+};
+
+// Generate clock display with current time
+export const generateClockBoard = (): BoardState => {
+    const now = new Date();
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const seconds = now.getSeconds().toString().padStart(2, '0');
+
+    const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+    const months = ['JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
+        'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
+
+    const dayName = days[now.getDay()];
+    const monthName = months[now.getMonth()];
+    const date = now.getDate();
+    const year = now.getFullYear();
+
+    // Format: 22 chars per row, 6 rows
+    // Row 0: Empty or decorative
+    // Row 1: Large time display
+    // Row 2: Seconds
+    // Row 3: Day of week
+    // Row 4: Month and Date
+    // Row 5: Year or empty
+
+    const timeStr = `${hours}:${minutes}`;
+    const secStr = `:${seconds}`;
+    const dateStr = `${monthName} ${date}`;
+
+    // Center each line
+    const centerText = (text: string): string => {
+        const padding = Math.floor((COLS - text.length) / 2);
+        return ' '.repeat(padding) + text + ' '.repeat(COLS - padding - text.length);
+    };
+
+    const row0 = centerText('');
+    const row1 = centerText(timeStr);
+    const row2 = centerText(secStr);
+    const row3 = centerText(dayName);
+    const row4 = centerText(dateStr);
+    const row5 = centerText(year.toString());
+
+    const fullText = row0 + row1 + row2 + row3 + row4 + row5;
+    return stringToBoard(fullText);
 };
 
 export const PRESET_TEMPLATES: Template[] = [
@@ -42,7 +88,7 @@ export const PRESET_TEMPLATES: Template[] = [
         '        HELLO         ' +
         '                      ' +
         '      WELCOME TO      ' +
-        '    FLIPBOARD         ' +
+        '      FLIPBOARD       ' +
         '                      '),
 
     t('welcome-home', 'Welcome Home', 'greetings',
@@ -58,7 +104,7 @@ export const PRESET_TEMPLATES: Template[] = [
         '        HAPPY         ' +
         '       BIRTHDAY       ' +
         '                      ' +
-        '         :)           ' +
+        '          :)          ' +
         '                      '),
 
     t('good-morning', 'Good Morning', 'greetings',
@@ -105,24 +151,24 @@ export const PRESET_TEMPLATES: Template[] = [
         'VVVVVVVVVVVVVVVVVVVVVV',
     ]),
 
-    // Icons
+    // Icons - Heart centered (cols 7-14 for 8-wide heart)
     colorPattern('heart', 'Heart', [
-        '  RR    RR            ',
-        ' RRRR  RRRR           ',
-        ' RRRRRRRRRR           ',
-        '  RRRRRRRR            ',
-        '    RRRR              ',
-        '      RR              ',
-    ]),
+        '       RR  RR         ',
+        '      RRRRRRRR        ',
+        '      RRRRRRRR        ',
+        '       RRRRRR         ',
+        '        RRRR          ',
+        '         RR           ',
+    ], 'icons'),
 
-    // Time templates (placeholders)
-    t('time-display', 'Time Display', 'time',
-        '                      ' +
-        '       12:00          ' +
-        '                      ' +
-        '     WEDNESDAY        ' +
-        '    JANUARY 29        ' +
-        '                      '),
+    // Time - Live clock template
+    {
+        id: 'live-clock',
+        name: '24H Clock (Live)',
+        category: 'time',
+        board: generateClockBoard(),
+        isLive: true,
+    },
 ];
 
 // Template service for localStorage

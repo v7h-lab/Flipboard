@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Template, PRESET_TEMPLATES, templateService } from '../data/templates';
+import { Template, PRESET_TEMPLATES, templateService, generateClockBoard } from '../data/templates';
 import { BoardState, COLS, COLORS } from '../constants';
 
 interface TemplateLibraryProps {
     onSelect: (board: BoardState) => void;
+    onSelectLive?: (generator: () => BoardState) => void; // For live templates
     onSaveCustom?: (name: string, board: BoardState) => void;
     currentBoard?: BoardState;
     theme?: 'dark' | 'light';
@@ -20,6 +21,7 @@ const CATEGORIES = [
 
 const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
     onSelect,
+    onSelectLive,
     onSaveCustom,
     currentBoard,
     theme = 'dark'
@@ -113,13 +115,27 @@ const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                 {filteredTemplates.map(template => (
                     <button
                         key={template.id}
-                        onClick={() => onSelect(template.board)}
-                        className={`p-2 rounded-lg transition-all hover:scale-105 ${theme === 'dark'
+                        onClick={() => {
+                            if (template.isLive && onSelectLive) {
+                                // For live templates, pass the generator function
+                                if (template.id === 'live-clock') {
+                                    onSelectLive(generateClockBoard);
+                                }
+                            } else {
+                                onSelect(template.board);
+                            }
+                        }}
+                        className={`p-2 rounded-lg transition-all hover:scale-105 relative ${theme === 'dark'
                             ? 'bg-[#111] border border-[#333] hover:border-yellow-500/50'
                             : 'bg-white border border-gray-300 hover:border-yellow-500'
                             }`}
                     >
-                        {renderPreview(template.board)}
+                        {template.isLive && (
+                            <div className="absolute top-1 right-1 px-1.5 py-0.5 bg-red-500 text-white text-[8px] font-bold rounded animate-pulse">
+                                LIVE
+                            </div>
+                        )}
+                        {renderPreview(template.isLive ? generateClockBoard() : template.board)}
                         <div className="flex items-center justify-between mt-2">
                             <span className={`text-[10px] font-mono truncate ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
                                 }`}>

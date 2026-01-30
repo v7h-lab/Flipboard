@@ -130,16 +130,15 @@ const PIXEL_DIGITS: { [key: string]: number[][] } = {
 };
 
 // Generate artsy big-digit clock using full board (HH:MM format)
-export const generateArtsyClockBoard = (): BoardState => {
+export const generateArtsyClockBoard = (theme: 'dark' | 'light' = 'dark'): BoardState => {
     const now = new Date();
     const hours = now.getHours().toString().padStart(2, '0');
     const minutes = now.getMinutes().toString().padStart(2, '0');
 
     const board = createEmptyBoard();
 
-    // Layout: 22 cols total
-    // 1 margin + 4 digit + 1 space + 4 digit + 2 colon + 4 digit + 1 space + 4 digit + 1 margin = 22
-    // Positions: H1 at col 1, H2 at col 6, : at col 10, M1 at col 12, M2 at col 17
+    // Use white on dark theme, black on light theme
+    const colorCode = theme === 'dark' ? '[W]' : '[K]';
 
     const drawDigit = (digit: string, startCol: number) => {
         const pattern = PIXEL_DIGITS[digit];
@@ -149,7 +148,7 @@ export const generateArtsyClockBoard = (): BoardState => {
             for (let col = 0; col < pattern[row].length; col++) {
                 const boardCol = startCol + col;
                 if (boardCol >= 0 && boardCol < COLS && pattern[row][col] === 1) {
-                    board[row][boardCol] = { char: ' ', color: '[W]' };
+                    board[row][boardCol] = { char: ' ', color: colorCode };
                 }
             }
         }

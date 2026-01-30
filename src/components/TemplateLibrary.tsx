@@ -117,9 +117,9 @@ const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                         key={template.id}
                         onClick={() => {
                             if (template.isLive && onSelectLive) {
-                                // For live templates, pass the generator function
+                                // For live templates, pass a generator that uses the current theme
                                 if (template.id === 'live-clock') {
-                                    onSelectLive(generateArtsyClockBoard);
+                                    onSelectLive(() => generateArtsyClockBoard(theme));
                                 }
                             } else {
                                 onSelect(template.board);
@@ -135,7 +135,7 @@ const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                                 LIVE
                             </div>
                         )}
-                        {renderPreview(template.isLive ? generateArtsyClockBoard() : template.board)}
+                        {renderPreview(template.isLive ? generateArtsyClockBoard(theme) : template.board)}
                         <div className="flex items-center justify-between mt-2">
                             <span className={`text-[10px] font-mono truncate ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
                                 }`}>

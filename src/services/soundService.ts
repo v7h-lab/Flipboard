@@ -78,33 +78,52 @@ class SoundService {
 
     // New "Mechanical" Sound requested by user
     private playMechanicalClick(velocity: number) {
-        if (!this.audioCtx || this.audioCtx.state === 'suspended') {
-            if (this.audioCtx?.state === 'suspended') this.audioCtx.resume();
+        if (!this.audioCtx || !this.masterGain) return;
+        if (this.audioCtx.state === 'suspended') {
+            this.audioCtx.resume();
             return;
         }
 
+        const t = this.audioCtx.currentTime;
+
+        // Main mechanical click - boosted to match default volume
         const oscillator = this.audioCtx.createOscillator();
         const gainNode = this.audioCtx.createGain();
         const filter = this.audioCtx.createBiquadFilter();
 
         // Randomize pitch slightly for realism
-        const frequency = 150 + Math.random() * 50;
+        const frequency = 200 + Math.random() * 80;
         oscillator.type = 'triangle';
-        oscillator.frequency.setValueAtTime(frequency, this.audioCtx.currentTime);
-        oscillator.frequency.exponentialRampToValueAtTime(10, this.audioCtx.currentTime + 0.1);
+        oscillator.frequency.setValueAtTime(frequency, t);
+        oscillator.frequency.exponentialRampToValueAtTime(20, t + 0.08);
 
+        // Lower highpass to let more signal through
         filter.type = 'highpass';
-        filter.frequency.setValueAtTime(1000, this.audioCtx.currentTime);
+        filter.frequency.setValueAtTime(400, t);
 
-        gainNode.gain.setValueAtTime(0.1 * velocity, this.audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioCtx.currentTime + 0.1);
+        // Boosted gain to match default sound intensity
+        gainNode.gain.setValueAtTime(0.4 * velocity, t);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, t + 0.08);
 
         oscillator.connect(filter);
         filter.connect(gainNode);
-        gainNode.connect(this.audioCtx.destination);
+        gainNode.connect(this.masterGain); // Route through masterGain like default
 
-        oscillator.start();
-        oscillator.stop(this.audioCtx.currentTime + 0.1);
+        oscillator.start(t);
+        oscillator.stop(t + 0.1);
+
+        // Add a subtle low thump for body
+        const thump = this.audioCtx.createOscillator();
+        const thumpGain = this.audioCtx.createGain();
+        thump.type = 'sine';
+        thump.frequency.setValueAtTime(120, t);
+        thump.frequency.exponentialRampToValueAtTime(40, t + 0.05);
+        thumpGain.gain.setValueAtTime(0.15 * velocity, t);
+        thumpGain.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
+        thump.connect(thumpGain);
+        thumpGain.connect(this.masterGain);
+        thump.start(t);
+        thump.stop(t + 0.06);
     }
 }
 

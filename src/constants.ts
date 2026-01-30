@@ -39,6 +39,13 @@ export const boardToString = (board: BoardState): string => {
 // The standard character set for a split-flap display
 export const CHARACTER_SET = " ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$()[]+-&;:'\",.?/".split("");
 
+// Color codes are treated as special "characters" in the flap set
+// They appear at the end of the set, so flipping to a color cycles through all chars first
+export const COLOR_CODES = ['[R]', '[O]', '[Y]', '[G]', '[B]', '[V]', '[W]', '[P]'] as const;
+
+// Combined flap set: characters + colors (colors flip in after all characters)
+export const FLAP_SET = [...CHARACTER_SET, ...COLOR_CODES];
+
 // Color palette with UI-friendly properties
 export const COLORS = [
     { code: '[R]', name: 'Red', bg: 'bg-red-600', hex: '#dc2626' },

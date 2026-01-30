@@ -21,7 +21,19 @@ const GridEditor: React.FC<GridEditorProps> = ({ board, onChange, theme = 'dark'
     }, [selectedCell]);
 
     const handleCellClick = (row: number, col: number) => {
-        setSelectedCell({ row, col });
+        // If a color is selected, apply it directly to the clicked cell
+        if (selectedColor) {
+            applyColorToCell(row, col, selectedColor);
+            // Move to next cell for quick color painting
+            if (col < COLS - 1) {
+                setSelectedCell({ row, col: col + 1 });
+            } else if (row < ROWS - 1) {
+                setSelectedCell({ row: row + 1, col: 0 });
+            }
+        } else {
+            // No color selected, just select the cell for text input
+            setSelectedCell({ row, col });
+        }
     };
 
     const handleKeyInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -188,8 +200,8 @@ const GridEditor: React.FC<GridEditorProps> = ({ board, onChange, theme = 'dark'
                         key={color.code}
                         onClick={() => setSelectedColor(color.code)}
                         className={`w-6 h-6 rounded ${color.bg} border-2 transition-transform ${selectedColor === color.code
-                                ? 'border-yellow-400 scale-110'
-                                : 'border-transparent hover:scale-105'
+                            ? 'border-yellow-400 scale-110'
+                            : 'border-transparent hover:scale-105'
                             }`}
                         title={color.name}
                     />
@@ -198,8 +210,8 @@ const GridEditor: React.FC<GridEditorProps> = ({ board, onChange, theme = 'dark'
                 <button
                     onClick={clearBoard}
                     className={`px-3 py-1 text-xs font-mono font-bold rounded transition-colors ${theme === 'dark'
-                            ? 'bg-red-600/20 text-red-400 hover:bg-red-600/40'
-                            : 'bg-red-100 text-red-600 hover:bg-red-200'
+                        ? 'bg-red-600/20 text-red-400 hover:bg-red-600/40'
+                        : 'bg-red-100 text-red-600 hover:bg-red-200'
                         }`}
                 >
                     CLEAR

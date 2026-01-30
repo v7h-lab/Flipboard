@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { COLS, TOTAL_BITS, BoardState, stringToBoard, boardToString, createEmptyBoard } from './constants';
 import SplitFlap from './components/SplitFlap';
 import InputModal from './components/InputModal';
@@ -6,6 +6,7 @@ import QRCodeModal from './components/QRCodeModal';
 import RemoteControl from './components/RemoteControl';
 import { soundService } from './services/soundService';
 import { connectionService, RemoteCommand, ConnectionMode } from './services/connectionService';
+import { generateArtsyClockBoard } from './data/templates';
 
 const App: React.FC = () => {
     const [isRemoteMode, setIsRemoteMode] = useState(false);
@@ -65,7 +66,9 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
     const [hasStarted, setHasStarted] = useState(false);
     const [theme, setTheme] = useState<'dark' | 'light'>('dark');
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [liveClockInterval, setLiveClockInterval] = useState<ReturnType<typeof setInterval> | null>(null);
+
+    const [isClockRunning, setIsClockRunning] = useState(false);
+    const liveClockIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const [lastLog, setLastLog] = useState<string>("Waiting...");
     const [relayStatus, setRelayStatus] = useState<string>("Initializing...");
@@ -73,24 +76,33 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
     const WELCOME_MSG = "DIGITAL FLIPBOARD     READY TO FLIP         TYPE TO START...      ".padEnd(TOTAL_BITS, " ");
 
     const handleUpdate = (newMsg: string) => {
+        handleStopLiveClock();
         const msg = newMsg.toUpperCase();
         setMessage(msg);
         setBoard(stringToBoard(msg));
     };
 
     const handleBoardUpdate = (newBoard: BoardState) => {
+        handleStopLiveClock();
         setBoard(newBoard);
         setMessage(boardToString(newBoard));
     };
 
+    const handleStopLiveClock = () => {
+        if (liveClockIntervalRef.current) {
+            clearInterval(liveClockIntervalRef.current);
+            liveClockIntervalRef.current = null;
+        }
+        setIsClockRunning(false);
+    };
+
     const handleStartLiveClock = (generator: () => BoardState) => {
         // Stop any existing clock
-        if (liveClockInterval) {
-            clearInterval(liveClockInterval);
-        }
+        handleStopLiveClock();
 
         // Start clock mode - update every second
         setHasStarted(true);
+        setIsClockRunning(true);
         const clockBoard = generator();
         setBoard(clockBoard);
         setMessage(boardToString(clockBoard));
@@ -101,20 +113,18 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
             setMessage(boardToString(newBoard));
         }, 1000);
 
-        setLiveClockInterval(interval);
-    };
-
-    const handleStopLiveClock = () => {
-        if (liveClockInterval) {
-            clearInterval(liveClockInterval);
-            setLiveClockInterval(null);
-        }
+        liveClockIntervalRef.current = interval;
     };
 
     useEffect(() => {
         connectionService.onCommand((cmd: RemoteCommand) => {
             const logIdx = new Date().toLocaleTimeString();
             setLastLog(`[${logIdx}] ${cmd.type}`);
+
+            // Stop live clock when receiving any update from remote
+            if (cmd.type === 'UPDATE_MESSAGE' || cmd.type === 'UPDATE_BOARD') {
+                handleStopLiveClock();
+            }
 
             if (cmd.type === 'UPDATE_MESSAGE') handleUpdate(cmd.payload);
             if (cmd.type === 'UPDATE_BOARD') setBoard(cmd.payload);
@@ -125,6 +135,14 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
             if (cmd.type === 'SET_SOUND') {
                 soundService.setProfile(cmd.payload);
                 soundService.playClick();
+            }
+            if (cmd.type === 'START_LIVE_CLOCK') {
+                // Start live clock with the specified theme
+                const clockTheme = cmd.payload;
+                handleStartLiveClock(() => generateArtsyClockBoard(clockTheme));
+            }
+            if (cmd.type === 'STOP_LIVE_CLOCK') {
+                handleStopLiveClock();
             }
         });
 
@@ -236,7 +254,7 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
                         <span className="hidden md:inline">REMOTE</span>
                     </button>
-                    {liveClockInterval ? (
+                    {isClockRunning ? (
                         <button
                             onClick={handleStopLiveClock}
                             className="px-8 py-3 rounded-full font-mono font-bold tracking-wider shadow-lg active:scale-95 transition-all bg-red-600 text-white hover:bg-red-500 animate-pulse"

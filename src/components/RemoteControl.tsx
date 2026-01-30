@@ -18,6 +18,7 @@ const RemoteControl: React.FC<RemoteControlProps> = ({ mode }) => {
     const [sound, setSound] = useState<'loud' | 'subtle'>('subtle');
     const [status, setStatus] = useState("connecting");
     const [logs, setLogs] = useState<string[]>([]);
+    const [isLiveClockActive, setIsLiveClockActive] = useState(false);
 
     const isProduction = connectionService.isProduction();
 
@@ -70,6 +71,7 @@ const RemoteControl: React.FC<RemoteControlProps> = ({ mode }) => {
             addLog("Cannot send: Not connected");
             return;
         }
+        setIsLiveClockActive(false); // Stop live clock mode when sending
         addLog(`Sending: ${text}`);
         connectionService.sendCommand({ type: 'UPDATE_MESSAGE', payload: text.padEnd(TOTAL_BITS, ' ') });
         setText("");
@@ -80,6 +82,7 @@ const RemoteControl: React.FC<RemoteControlProps> = ({ mode }) => {
             addLog("Cannot send: Not connected");
             return;
         }
+        setIsLiveClockActive(false); // Stop live clock mode when sending
         addLog("Sending board...");
         connectionService.sendCommand({ type: 'UPDATE_BOARD', payload: board });
     };
@@ -91,7 +94,25 @@ const RemoteControl: React.FC<RemoteControlProps> = ({ mode }) => {
     const handleTemplateSelect = (templateBoard: BoardState) => {
         setBoard(templateBoard);
         setText(boardToString(templateBoard).trimEnd());
+        setIsLiveClockActive(false); // Regular template stops live clock mode
         addLog("Template loaded");
+    };
+
+    const handleLiveClockStart = () => {
+        if (status !== 'connected') {
+            addLog("Cannot start clock: Not connected");
+            return;
+        }
+        connectionService.sendCommand({ type: 'START_LIVE_CLOCK', payload: theme });
+        setIsLiveClockActive(true);
+        addLog("Live clock started");
+    };
+
+    const handleLiveClockStop = () => {
+        if (status !== 'connected') return;
+        connectionService.sendCommand({ type: 'STOP_LIVE_CLOCK' });
+        setIsLiveClockActive(false);
+        addLog("Live clock stopped");
     };
 
     const handleTheme = (t: 'dark' | 'light') => {
@@ -204,17 +225,28 @@ const RemoteControl: React.FC<RemoteControlProps> = ({ mode }) => {
                     <div className="space-y-4">
                         <TemplateLibrary
                             onSelect={handleTemplateSelect}
+                            onSelectLive={handleLiveClockStart}
                             currentBoard={board}
                             onSaveCustom={() => addLog("Template saved")}
                             theme="dark"
                         />
-                        <button
-                            onClick={handleBoardSend}
-                            disabled={isDisabled}
-                            className="w-full bg-white text-black font-black py-3 rounded-lg active:scale-95 transition-all"
-                        >
-                            SEND TEMPLATE
-                        </button>
+                        {isLiveClockActive ? (
+                            <button
+                                onClick={handleLiveClockStop}
+                                disabled={isDisabled}
+                                className="w-full bg-red-600 text-white font-black py-3 rounded-lg active:scale-95 transition-all animate-pulse"
+                            >
+                                ⏹ STOP CLOCK
+                            </button>
+                        ) : (
+                            <button
+                                onClick={handleBoardSend}
+                                disabled={isDisabled}
+                                className="w-full bg-white text-black font-black py-3 rounded-lg active:scale-95 transition-all"
+                            >
+                                SEND TEMPLATE
+                            </button>
+                        )}
                     </div>
                 )}
             </div>

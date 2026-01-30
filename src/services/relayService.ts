@@ -4,7 +4,9 @@ export type RemoteCommand =
     | { type: 'UPDATE_MESSAGE'; payload: string }
     | { type: 'UPDATE_BOARD'; payload: BoardState }
     | { type: 'SET_THEME'; payload: 'dark' | 'light' }
-    | { type: 'SET_SOUND'; payload: 'loud' | 'subtle' };
+    | { type: 'SET_SOUND'; payload: 'loud' | 'subtle' }
+    | { type: 'START_LIVE_CLOCK'; payload: 'dark' | 'light' }  // Start clock with theme
+    | { type: 'STOP_LIVE_CLOCK' };
 
 type StatusCallback = (status: string) => void;
 type CommandCallback = (cmd: RemoteCommand) => void;

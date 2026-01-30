@@ -136,7 +136,12 @@ const GridEditor: React.FC<GridEditorProps> = ({ board, onChange, theme = 'dark'
     };
 
     const cellSize = compact ? 'w-6 h-8 text-[10px]' : 'w-8 h-10 text-sm';
+    const cellBorder = theme === 'dark' ? 'border border-[#333]' : 'border border-gray-400';
     const textColor = theme === 'dark' ? 'text-white' : 'text-black';
+
+    // Center indices for guide lines
+    const centerCol = Math.floor(COLS / 2); // 11 for 22 cols
+    const centerRow = Math.floor(ROWS / 2); // 3 for 6 rows
 
     return (
         <div className="flex flex-col gap-4">
@@ -168,17 +173,24 @@ const GridEditor: React.FC<GridEditorProps> = ({ board, onChange, theme = 'dark'
                                 }
                             }}
                             className={`
-                                ${cellSize} ${getCellBg(cell)} ${textColor}
+                                ${cellSize} ${cellBorder} ${getCellBg(cell)} ${textColor}
                                 flex items-center justify-center font-mono font-bold
-                                transition-all cursor-pointer
+                                transition-all cursor-pointer relative
                                 ${selectedCell?.row === ri && selectedCell?.col === ci
-                                    ? 'ring-2 ring-yellow-400 ring-offset-1 ring-offset-black scale-110 z-10'
+                                    ? 'ring-2 ring-yellow-400 ring-offset-1 ring-offset-black scale-110 z-20'
                                     : 'hover:ring-1 hover:ring-white/30'
                                 }
                                 ${cell.color ? 'text-transparent' : ''}
                             `}
                         >
                             {cell.char}
+                            {/* Center guide lines */}
+                            {ci === centerCol && (
+                                <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-yellow-500/40 pointer-events-none z-10" />
+                            )}
+                            {ri === centerRow && (
+                                <div className="absolute top-0 left-0 right-0 h-[2px] bg-yellow-500/40 pointer-events-none z-10" />
+                            )}
                         </button>
                     ))
                 )}

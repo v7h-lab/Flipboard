@@ -1,7 +1,7 @@
 class SoundService {
     private audioCtx: AudioContext | null = null;
     private masterGain: GainNode | null = null;
-    private currentProfile: 'default' | 'mechanical' = 'default';
+    private currentProfile: 'loud' | 'subtle' = 'subtle';
 
     public async init() {
         if (!this.audioCtx) {
@@ -26,7 +26,7 @@ class SoundService {
         return this.audioCtx;
     }
 
-    public setProfile(profile: 'default' | 'mechanical') {
+    public setProfile(profile: 'loud' | 'subtle') {
         this.currentProfile = profile;
     }
 
@@ -35,7 +35,7 @@ class SoundService {
     }
 
     public playClick(velocity: number = 1.0) {
-        if (this.currentProfile === 'mechanical') {
+        if (this.currentProfile === 'subtle') {
             this.playMechanicalClick(velocity);
         } else {
             this.playDefaultClick(velocity);

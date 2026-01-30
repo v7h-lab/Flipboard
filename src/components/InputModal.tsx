@@ -14,7 +14,7 @@ interface InputModalProps {
 const InputModal: React.FC<InputModalProps> = ({ isOpen, onClose, onUpdate, currentMessage, theme, setTheme }) => {
     // Trim trailing spaces so the user has room to type without deleting spaces first
     const [text, setText] = useState(currentMessage.trimEnd());
-    const [soundProfile, setSoundProfile] = useState<'default' | 'mechanical'>(soundService.getProfile());
+    const [soundProfile, setSoundProfile] = useState<'loud' | 'subtle'>(soundService.getProfile());
 
     if (!isOpen) return null;
 
@@ -32,7 +32,7 @@ const InputModal: React.FC<InputModalProps> = ({ isOpen, onClose, onUpdate, curr
         }
     };
 
-    const handleProfileChange = (profile: 'default' | 'mechanical') => {
+    const handleProfileChange = (profile: 'loud' | 'subtle') => {
         soundService.setProfile(profile);
         setSoundProfile(profile);
         soundService.playClick();
@@ -78,23 +78,23 @@ const InputModal: React.FC<InputModalProps> = ({ isOpen, onClose, onUpdate, curr
                             <div className="flex gap-2">
                                 <button
                                     type="button"
-                                    onClick={() => handleProfileChange('default')}
-                                    className={`px-4 py-2 rounded text-xs font-mono font-bold transition-all ${soundProfile === 'default'
+                                    onClick={() => handleProfileChange('subtle')}
+                                    className={`px-4 py-2 rounded text-xs font-mono font-bold transition-all ${soundProfile === 'subtle'
                                         ? 'bg-white text-black shadow-lg scale-105'
                                         : 'text-gray-500 hover:text-white hover:bg-white/10'
                                         }`}
                                 >
-                                    DEFAULT
+                                    SUBTLE
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => handleProfileChange('mechanical')}
-                                    className={`px-4 py-2 rounded text-xs font-mono font-bold transition-all ${soundProfile === 'mechanical'
+                                    onClick={() => handleProfileChange('loud')}
+                                    className={`px-4 py-2 rounded text-xs font-mono font-bold transition-all ${soundProfile === 'loud'
                                         ? 'bg-yellow-500 text-black shadow-lg scale-105'
                                         : 'text-gray-500 hover:text-white hover:bg-white/10'
                                         }`}
                                 >
-                                    MECHANICAL
+                                    LOUD
                                 </button>
                             </div>
                         </div>

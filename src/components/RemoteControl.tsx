@@ -9,7 +9,7 @@ interface RemoteControlProps {
 const RemoteControl: React.FC<RemoteControlProps> = ({ mode }) => {
     const [text, setText] = useState("");
     const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-    const [sound, setSound] = useState<'default' | 'mechanical'>('default');
+    const [sound, setSound] = useState<'loud' | 'subtle'>('subtle');
     const [status, setStatus] = useState("connecting");
     const [logs, setLogs] = useState<string[]>([]);
 
@@ -85,7 +85,7 @@ const RemoteControl: React.FC<RemoteControlProps> = ({ mode }) => {
         addLog(`Theme: ${t}`);
     };
 
-    const handleSound = (s: 'default' | 'mechanical') => {
+    const handleSound = (s: 'loud' | 'subtle') => {
         if (status !== 'connected') return;
         setSound(s);
         connectionService.sendCommand({ type: 'SET_SOUND', payload: s });
@@ -156,8 +156,8 @@ const RemoteControl: React.FC<RemoteControlProps> = ({ mode }) => {
                 <div className={`flex items-center justify-between bg-[#111] p-4 rounded-lg border border-[#333] ${status !== 'connected' ? 'opacity-50 pointer-events-none' : ''}`}>
                     <span className="text-gray-400 text-sm">SOUND</span>
                     <div className="flex gap-2">
-                        <button onClick={() => handleSound('default')} className={`px-3 py-1 rounded text-xs font-bold ${sound === 'default' ? 'bg-white text-black' : 'text-gray-500'}`}>DEF</button>
-                        <button onClick={() => handleSound('mechanical')} className={`px-3 py-1 rounded text-xs font-bold ${sound === 'mechanical' ? 'bg-yellow-500 text-black' : 'text-gray-500'}`}>MECH</button>
+                        <button onClick={() => handleSound('subtle')} className={`px-3 py-1 rounded text-xs font-bold ${sound === 'subtle' ? 'bg-white text-black' : 'text-gray-500'}`}>SUBTLE</button>
+                        <button onClick={() => handleSound('loud')} className={`px-3 py-1 rounded text-xs font-bold ${sound === 'loud' ? 'bg-yellow-500 text-black' : 'text-gray-500'}`}>LOUD</button>
                     </div>
                 </div>
             </div>

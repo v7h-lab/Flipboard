@@ -1,7 +1,7 @@
 export type RemoteCommand =
     | { type: 'UPDATE_MESSAGE'; payload: string }
     | { type: 'SET_THEME'; payload: 'dark' | 'light' }
-    | { type: 'SET_SOUND'; payload: 'default' | 'mechanical' };
+    | { type: 'SET_SOUND'; payload: 'loud' | 'subtle' };
 
 type StatusCallback = (status: string) => void;
 type CommandCallback = (cmd: RemoteCommand) => void;

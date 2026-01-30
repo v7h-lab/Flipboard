@@ -3,7 +3,7 @@ import Peer, { DataConnection } from 'peerjs';
 export type RemoteCommand =
     | { type: 'UPDATE_MESSAGE'; payload: string }
     | { type: 'SET_THEME'; payload: 'dark' | 'light' }
-    | { type: 'SET_SOUND'; payload: 'default' | 'mechanical' };
+    | { type: 'SET_SOUND'; payload: 'loud' | 'subtle' };
 
 // Explicit STUN/TURN config for better NAT traversal
 const ICE_SERVERS = {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { COLS, TOTAL_BITS } from './constants';
+import { COLS, TOTAL_BITS, BoardState, stringToBoard, boardToString, createEmptyBoard } from './constants';
 import SplitFlap from './components/SplitFlap';
 import InputModal from './components/InputModal';
 import QRCodeModal from './components/QRCodeModal';
@@ -59,6 +59,7 @@ interface HostAppProps {
 
 const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange }) => {
     const [message, setMessage] = useState<string>("".padEnd(TOTAL_BITS, " "));
+    const [board, setBoard] = useState<BoardState>(createEmptyBoard());
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isQRModalOpen, setIsQRModalOpen] = useState(false);
     const [hasStarted, setHasStarted] = useState(false);
@@ -71,7 +72,14 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
     const WELCOME_MSG = "DIGITAL FLIPBOARD     READY TO FLIP         TYPE TO START...      ".padEnd(TOTAL_BITS, " ");
 
     const handleUpdate = (newMsg: string) => {
-        setMessage(newMsg.toUpperCase());
+        const msg = newMsg.toUpperCase();
+        setMessage(msg);
+        setBoard(stringToBoard(msg));
+    };
+
+    const handleBoardUpdate = (newBoard: BoardState) => {
+        setBoard(newBoard);
+        setMessage(boardToString(newBoard));
     };
 
     useEffect(() => {
@@ -80,6 +88,7 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
             setLastLog(`[${logIdx}] ${cmd.type}`);
 
             if (cmd.type === 'UPDATE_MESSAGE') handleUpdate(cmd.payload);
+            if (cmd.type === 'UPDATE_BOARD') setBoard(cmd.payload);
             if (cmd.type === 'SET_THEME') {
                 setTheme(cmd.payload);
                 soundService.playClick();
@@ -212,7 +221,9 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onUpdate={handleUpdate}
+                onBoardUpdate={handleBoardUpdate}
                 currentMessage={message}
+                currentBoard={board}
                 theme={theme}
                 setTheme={setTheme}
             />

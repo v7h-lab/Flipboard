@@ -1,7 +1,9 @@
 import Peer, { DataConnection } from 'peerjs';
+import { BoardState } from '../constants';
 
 export type RemoteCommand =
     | { type: 'UPDATE_MESSAGE'; payload: string }
+    | { type: 'UPDATE_BOARD'; payload: BoardState }
     | { type: 'SET_THEME'; payload: 'dark' | 'light' }
     | { type: 'SET_SOUND'; payload: 'loud' | 'subtle' };
 

@@ -28,20 +28,21 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, link, onMode
         }
     }, [link]);
 
-    if (!isOpen) return null;
+    // ESC key to close modal - must be before early return (rules of hooks)
+    useEffect(() => {
+        if (!isOpen) return;
 
-    // ESC key to close modal
-    const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-            onClose();
-        }
-    };
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
 
-    // Add ESC listener when modal opens
-    React.useEffect(() => {
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, []);
+    }, [isOpen, onClose]);
+
+    if (!isOpen) return null;
 
     const protocol = window.location.protocol;
     const port = window.location.port ? `:${window.location.port}` : '';

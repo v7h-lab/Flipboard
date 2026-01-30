@@ -34,20 +34,21 @@ const InputModal: React.FC<InputModalProps> = ({
     const [board, setBoard] = useState<BoardState>(currentBoard || stringToBoard(currentMessage));
     const [soundProfile, setSoundProfile] = useState<'loud' | 'subtle'>(soundService.getProfile());
 
-    if (!isOpen) return null;
-
-    // ESC key to close modal
-    const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-            onClose();
-        }
-    };
-
-    // Add ESC listener when modal opens
+    // ESC key to close modal - must be before early return (rules of hooks)
     React.useEffect(() => {
+        if (!isOpen) return;
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, []);
+    }, [isOpen, onClose]);
+
+    if (!isOpen) return null;
 
     const handleSubmit = (e?: React.FormEvent) => {
         if (e) e.preventDefault();

@@ -156,11 +156,11 @@ export const generateArtsyClockBoard = (): BoardState => {
     };
 
     // Draw HH:MM with equal spacing
-    // Layout: 1 margin + 4 digit + 1 space + 4 digit + 1 space + 1 colon + 1 space + 4 digit + 1 space + 4 digit = 22
-    drawDigit(hours[0], 1);     // First hour digit at col 1-4
-    drawDigit(hours[1], 6);     // Second hour digit at col 6-9
-    drawDigit(':', 11);         // Colon at col 11 (with space before and after)
-    drawDigit(minutes[0], 13);  // First minute digit at col 13-16
+    // Layout: 4 digit + 1 space + 4 digit + 2 space + 1 colon + 2 space + 4 digit + 1 space + 4 digit = 22
+    drawDigit(hours[0], 0);     // First hour digit at col 0-3
+    drawDigit(hours[1], 5);     // Second hour digit at col 5-8
+    drawDigit(':', 9);          // Colon at col 9-10 (dot at col 10)
+    drawDigit(minutes[0], 13);  // First minute digit at col 13-16 (2 spaces after colon)
     drawDigit(minutes[1], 18);  // Second minute digit at col 18-21
 
     return board;

@@ -58,8 +58,20 @@ const SplitFlap: React.FC<SplitFlapProps> = ({ targetChar, color, delay = 0, the
 
     // Theme-based colors
     const defaultBg = theme === 'dark' ? 'bg-[#1e1e1e]' : 'bg-[#f0f0f0]';
-    const getCurrentBg = () => isCurrentColor ? COLOR_MAP[currentItem] : defaultBg;
-    const getNextBg = () => isNextColor ? COLOR_MAP[nextItem] : defaultBg;
+
+    // In light mode, swap white to black for visibility
+    const getThemeAwareBg = (item: string) => {
+        const colorBg = COLOR_MAP[item];
+        if (!colorBg) return defaultBg;
+        // In light mode, white is invisible - use black instead
+        if (theme === 'light' && colorBg === 'bg-white') {
+            return 'bg-black';
+        }
+        return colorBg;
+    };
+
+    const getCurrentBg = () => isCurrentColor ? getThemeAwareBg(currentItem) : defaultBg;
+    const getNextBg = () => isNextColor ? getThemeAwareBg(nextItem) : defaultBg;
 
     // Display character (hide for color blocks)
     const displayChar = isCurrentColor ? '' : currentItem;

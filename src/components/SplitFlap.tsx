@@ -4,11 +4,12 @@ import { soundService } from '../services/soundService';
 
 interface SplitFlapProps {
     targetChar: string;
+    color?: string; // Color code like '[R]' from BoardState
     delay?: number;
     theme?: 'dark' | 'light';
 }
 
-const SplitFlap: React.FC<SplitFlapProps> = ({ targetChar, delay = 0, theme = 'dark' }) => {
+const SplitFlap: React.FC<SplitFlapProps> = ({ targetChar, color, delay = 0, theme = 'dark' }) => {
     const [currentCharIndex, setCurrentCharIndex] = useState(0);
     const [isAnimating, setIsAnimating] = useState(false);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -50,12 +51,13 @@ const SplitFlap: React.FC<SplitFlapProps> = ({ targetChar, delay = 0, theme = 'd
     const char = CHARACTER_SET[currentCharIndex];
     const nextChar = CHARACTER_SET[(currentCharIndex + 1) % CHARACTER_SET.length];
 
-    // Colors
-    const isColorBlock = COLOR_MAP[char] !== undefined;
+    // Colors - check explicit color prop first, then fall back to character-based color
+    const isColorBlock = color !== undefined || COLOR_MAP[char] !== undefined;
+    const cellColor = color || (COLOR_MAP[char] ? char : undefined);
 
     // Theme-based colors
     const defaultBg = theme === 'dark' ? 'bg-[#1e1e1e]' : 'bg-[#f0f0f0]';
-    const getBg = (c: string) => COLOR_MAP[c] ? COLOR_MAP[c] : defaultBg;
+    const getBg = () => cellColor && COLOR_MAP[cellColor] ? COLOR_MAP[cellColor] : defaultBg;
 
     // Styles for the card halves
     // Top: Darkens towards bottom to simulate curve away from light
@@ -76,14 +78,14 @@ const SplitFlap: React.FC<SplitFlapProps> = ({ targetChar, delay = 0, theme = 'd
         <div className={`w-full h-full ${cardBg} flex items-center justify-center overflow-hidden rounded-[2px] relative perspective-1000 shadow-[inset_0_0_10px_rgba(0,0,0,0.5)]`}>
 
             {/* Top Half (Current) */}
-            <div className={`absolute top-0 w-full h-1/2 flex items-end justify-center overflow-hidden z-0 border-b ${theme === 'dark' ? 'border-black/50' : 'border-gray-400/50'} ${getBg(char)} ${topGradient}`}>
+            <div className={`absolute top-0 w-full h-1/2 flex items-end justify-center overflow-hidden z-0 border-b ${theme === 'dark' ? 'border-black/50' : 'border-gray-400/50'} ${getBg()} ${topGradient}`}>
                 <div className="absolute inset-0 bg-noise opacity-20"></div>
                 <span className={`${charStyle} translate-y-1/2`}>{char}</span>
                 <div className={`absolute inset-0 pointer-events-none ${theme === 'dark' ? 'bg-gradient-to-b from-white/5 to-black/40' : 'bg-gradient-to-b from-white/40 to-black/10'}`}></div>
             </div>
 
             {/* Bottom Half (Current) */}
-            <div className={`absolute bottom-0 w-full h-1/2 flex items-start justify-center overflow-hidden z-0 ${getBg(char)} ${bottomGradient}`}>
+            <div className={`absolute bottom-0 w-full h-1/2 flex items-start justify-center overflow-hidden z-0 ${getBg()} ${bottomGradient}`}>
                 <div className="absolute inset-0 bg-noise opacity-20"></div>
                 <span className={`${charStyle} -translate-y-1/2`}>{char}</span>
                 <div className={`absolute inset-0 pointer-events-none ${theme === 'dark' ? 'bg-gradient-to-t from-black/60 to-transparent' : 'bg-gradient-to-t from-black/20 to-transparent'}`}></div>
@@ -91,7 +93,7 @@ const SplitFlap: React.FC<SplitFlapProps> = ({ targetChar, delay = 0, theme = 'd
 
             {/* Animated Flap (Next) */}
             {isAnimating && (
-                <div className={`absolute top-0 w-full h-1/2 flex items-end justify-center overflow-hidden z-20 origin-bottom animate-flip-down backface-hidden ${getBg(nextChar)} ${topGradient} border-b ${theme === 'dark' ? 'border-black/80' : 'border-gray-500/50'} shadow-md`}>
+                <div className={`absolute top-0 w-full h-1/2 flex items-end justify-center overflow-hidden z-20 origin-bottom animate-flip-down backface-hidden ${getBg()} ${topGradient} border-b ${theme === 'dark' ? 'border-black/80' : 'border-gray-500/50'} shadow-md`}>
                     <div className="absolute inset-0 bg-noise opacity-20"></div>
                     <span className={`${charStyle} translate-y-1/2`}>{nextChar}</span>
                     {/* Dynamic lighting on flip */}

@@ -178,15 +178,21 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
                         width: 'min(95vw, 1200px)',
                     }}
                 >
-                    {Array.from({ length: TOTAL_BITS }).map((_, i) => (
-                        <div key={i} className="aspect-[4/6] relative">
-                            <SplitFlap
-                                targetChar={message[i] || " "}
-                                delay={(i % COLS) * 50 + (Math.floor(i / COLS) * 20)}
-                                theme={theme}
-                            />
-                        </div>
-                    ))}
+                    {board.map((row, rowIdx) =>
+                        row.map((cell, colIdx) => {
+                            const i = rowIdx * COLS + colIdx;
+                            return (
+                                <div key={i} className="aspect-[4/6] relative">
+                                    <SplitFlap
+                                        targetChar={cell.char || " "}
+                                        color={cell.color}
+                                        delay={(colIdx) * 50 + (rowIdx * 20)}
+                                        theme={theme}
+                                    />
+                                </div>
+                            );
+                        })
+                    )}
                 </div>
             </div>
 

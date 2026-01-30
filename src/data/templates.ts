@@ -48,12 +48,12 @@ const PIXEL_DIGITS: { [key: string]: number[][] } = {
         [1, 1, 1, 1],
     ],
     '1': [
+        [0, 0, 0, 1],
         [0, 0, 1, 1],
-        [0, 1, 1, 1],
-        [0, 0, 1, 1],
-        [0, 0, 1, 1],
-        [0, 0, 1, 1],
-        [0, 0, 1, 1],
+        [0, 0, 0, 1],
+        [0, 0, 0, 1],
+        [0, 0, 0, 1],
+        [0, 0, 0, 1],
     ],
     '2': [
         [1, 1, 1, 1],
@@ -156,11 +156,12 @@ export const generateArtsyClockBoard = (): BoardState => {
     };
 
     // Draw HH:MM with equal spacing
-    drawDigit(hours[0], 1);     // First hour digit at col 1
-    drawDigit(hours[1], 6);     // Second hour digit at col 6
-    drawDigit(':', 10);         // Colon at col 10-11
-    drawDigit(minutes[0], 12);  // First minute digit at col 12
-    drawDigit(minutes[1], 17);  // Second minute digit at col 17
+    // Layout: 1 margin + 4 digit + 1 space + 4 digit + 1 space + 1 colon + 1 space + 4 digit + 1 space + 4 digit = 22
+    drawDigit(hours[0], 1);     // First hour digit at col 1-4
+    drawDigit(hours[1], 6);     // Second hour digit at col 6-9
+    drawDigit(':', 11);         // Colon at col 11 (with space before and after)
+    drawDigit(minutes[0], 13);  // First minute digit at col 13-16
+    drawDigit(minutes[1], 18);  // Second minute digit at col 18-21
 
     return board;
 };

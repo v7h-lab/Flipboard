@@ -3,18 +3,24 @@ class SoundService {
     private masterGain: GainNode | null = null;
     private currentProfile: 'loud' | 'subtle' = 'subtle';
 
+    // Sound throttling to prevent audio overload
+    private lastClickTime: number = 0;
+    private clicksThisFrame: number = 0;
+    private readonly MAX_CLICKS_PER_FRAME = 8; // Limit concurrent clicks
+    private readonly MIN_CLICK_INTERVAL = 15; // Min ms between any clicks
+    private frameResetTimeout: ReturnType<typeof setTimeout> | null = null;
+
     public async init() {
         if (!this.audioCtx) {
             try {
                 this.audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
 
-                // Safety check for suspended state (browser autoplay policy)
                 if (this.audioCtx.state === 'suspended') {
                     await this.audioCtx.resume();
                 }
 
                 this.masterGain = this.audioCtx.createGain();
-                this.masterGain.gain.setValueAtTime(0.5, this.audioCtx.currentTime); // Master volume
+                this.masterGain.gain.setValueAtTime(0.5, this.audioCtx.currentTime);
                 this.masterGain.connect(this.audioCtx.destination);
                 console.log("SoundService initialized. State:", this.audioCtx.state);
             } catch (e) {
@@ -35,6 +41,29 @@ class SoundService {
     }
 
     public playClick(velocity: number = 1.0) {
+        const now = performance.now();
+
+        // Throttle: skip if too soon after last click
+        if (now - this.lastClickTime < this.MIN_CLICK_INTERVAL) {
+            return;
+        }
+
+        // Limit clicks per frame to prevent audio overload
+        if (this.clicksThisFrame >= this.MAX_CLICKS_PER_FRAME) {
+            return;
+        }
+
+        this.clicksThisFrame++;
+        this.lastClickTime = now;
+
+        // Reset frame counter after a short delay
+        if (!this.frameResetTimeout) {
+            this.frameResetTimeout = setTimeout(() => {
+                this.clicksThisFrame = 0;
+                this.frameResetTimeout = null;
+            }, 50); // Reset every 50ms
+        }
+
         if (this.currentProfile === 'subtle') {
             this.playMechanicalClick(velocity);
         } else {
@@ -42,7 +71,7 @@ class SoundService {
         }
     }
 
-    // Original "Default" Sound
+    // Original "Default" Sound (Loud)
     private playDefaultClick(velocity: number) {
         if (!this.audioCtx || !this.masterGain) return;
         if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
@@ -76,7 +105,7 @@ class SoundService {
         thudOsc.stop(t + 0.06);
     }
 
-    // New "Mechanical" Sound requested by user
+    // "Mechanical" Sound (Subtle)
     private playMechanicalClick(velocity: number) {
         if (!this.audioCtx || !this.masterGain) return;
         if (this.audioCtx.state === 'suspended') {
@@ -86,28 +115,25 @@ class SoundService {
 
         const t = this.audioCtx.currentTime;
 
-        // Main mechanical click - boosted to match default volume
+        // Main mechanical click
         const oscillator = this.audioCtx.createOscillator();
         const gainNode = this.audioCtx.createGain();
         const filter = this.audioCtx.createBiquadFilter();
 
-        // Randomize pitch slightly for realism
         const frequency = 200 + Math.random() * 80;
         oscillator.type = 'triangle';
         oscillator.frequency.setValueAtTime(frequency, t);
         oscillator.frequency.exponentialRampToValueAtTime(20, t + 0.08);
 
-        // Lower highpass to let more signal through
         filter.type = 'highpass';
         filter.frequency.setValueAtTime(400, t);
 
-        // Boosted gain to match default sound intensity
         gainNode.gain.setValueAtTime(0.4 * velocity, t);
         gainNode.gain.exponentialRampToValueAtTime(0.01, t + 0.08);
 
         oscillator.connect(filter);
         filter.connect(gainNode);
-        gainNode.connect(this.masterGain); // Route through masterGain like default
+        gainNode.connect(this.masterGain);
 
         oscillator.start(t);
         oscillator.stop(t + 0.1);

@@ -11,6 +11,7 @@ interface GridEditorProps {
 const GridEditor: React.FC<GridEditorProps> = ({ board, onChange, theme = 'dark', compact = false }) => {
     const [selectedCell, setSelectedCell] = useState<{ row: number; col: number } | null>(null);
     const [selectedColor, setSelectedColor] = useState<string | undefined>(undefined);
+    const [isEraserMode, setIsEraserMode] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
     // Focus hidden input when cell is selected
@@ -21,6 +22,18 @@ const GridEditor: React.FC<GridEditorProps> = ({ board, onChange, theme = 'dark'
     }, [selectedCell]);
 
     const handleCellClick = (row: number, col: number) => {
+        // Eraser mode: clear color from cell
+        if (isEraserMode) {
+            applyColorToCell(row, col, undefined);
+            // Move to next cell for quick erasing
+            if (col < COLS - 1) {
+                setSelectedCell({ row, col: col + 1 });
+            } else if (row < ROWS - 1) {
+                setSelectedCell({ row: row + 1, col: 0 });
+            }
+            return;
+        }
+
         // If a color is selected, apply it directly to the clicked cell
         if (selectedColor) {
             applyColorToCell(row, col, selectedColor);
@@ -198,20 +211,31 @@ const GridEditor: React.FC<GridEditorProps> = ({ board, onChange, theme = 'dark'
 
             {/* Color Picker */}
             <div className={`flex items-center gap-2 p-2 rounded-lg ${theme === 'dark' ? 'bg-[#111]' : 'bg-gray-200'}`}>
-                <span className={`text-xs font-mono ${theme === 'dark' ? 'text-gray-500' : 'text-gray-600'}`}>COLOR:</span>
+                <span className={`text-xs font-mono ${theme === 'dark' ? 'text-gray-500' : 'text-gray-600'}`}>MODE:</span>
+                {/* Text mode button */}
                 <button
-                    onClick={() => setSelectedColor(undefined)}
-                    className={`w-6 h-6 rounded border-2 ${selectedColor === undefined ? 'border-yellow-400' : 'border-transparent'
+                    onClick={() => { setSelectedColor(undefined); setIsEraserMode(false); }}
+                    className={`w-6 h-6 rounded border-2 flex items-center justify-center ${!selectedColor && !isEraserMode ? 'border-yellow-400' : 'border-transparent'
                         } ${theme === 'dark' ? 'bg-[#1e1e1e]' : 'bg-white'}`}
-                    title="No color"
+                    title="Text mode"
                 >
-                    <span className="text-[8px]">Ø</span>
+                    <span className={`text-[10px] font-bold ${theme === 'dark' ? 'text-white' : 'text-black'}`}>A</span>
                 </button>
+                {/* Eraser button */}
+                <button
+                    onClick={() => { setSelectedColor(undefined); setIsEraserMode(true); }}
+                    className={`w-6 h-6 rounded border-2 flex items-center justify-center ${isEraserMode ? 'border-yellow-400 bg-pink-600' : 'border-transparent bg-pink-600/50'
+                        }`}
+                    title="Eraser - clear colors"
+                >
+                    <span className="text-[10px]">🧹</span>
+                </button>
+                <div className="w-px h-4 bg-gray-600 mx-1" />
                 {COLORS.map(color => (
                     <button
                         key={color.code}
-                        onClick={() => setSelectedColor(color.code)}
-                        className={`w-6 h-6 rounded ${color.bg} border-2 transition-transform ${selectedColor === color.code
+                        onClick={() => { setSelectedColor(color.code); setIsEraserMode(false); }}
+                        className={`w-6 h-6 rounded ${color.bg} border-2 transition-transform ${selectedColor === color.code && !isEraserMode
                             ? 'border-yellow-400 scale-110'
                             : 'border-transparent hover:scale-105'
                             }`}

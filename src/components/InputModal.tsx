@@ -36,6 +36,19 @@ const InputModal: React.FC<InputModalProps> = ({
 
     if (!isOpen) return null;
 
+    // ESC key to close modal
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+            onClose();
+        }
+    };
+
+    // Add ESC listener when modal opens
+    React.useEffect(() => {
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
     const handleSubmit = (e?: React.FormEvent) => {
         if (e) e.preventDefault();
         if (activeTab === 'grid' || activeTab === 'templates') {
@@ -106,7 +119,15 @@ const InputModal: React.FC<InputModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+            onClick={(e) => {
+                // Close when clicking on backdrop (not on modal content)
+                if (e.target === e.currentTarget) {
+                    onClose();
+                }
+            }}
+        >
             <div className="bg-[#1a1a1a] border border-[#333] w-full max-w-4xl max-h-[90vh] rounded-xl shadow-2xl flex flex-col overflow-hidden">
                 {/* Header */}
                 <div className="flex justify-between items-center p-6 pb-4 border-b border-[#333]">

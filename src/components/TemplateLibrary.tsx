@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Template, PRESET_TEMPLATES, templateService, generateClockBoard } from '../data/templates';
+import { Template, PRESET_TEMPLATES, templateService, generateArtsyClockBoard } from '../data/templates';
 import { BoardState, COLS, COLORS } from '../constants';
 
 interface TemplateLibraryProps {
@@ -119,7 +119,7 @@ const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                             if (template.isLive && onSelectLive) {
                                 // For live templates, pass the generator function
                                 if (template.id === 'live-clock') {
-                                    onSelectLive(generateClockBoard);
+                                    onSelectLive(generateArtsyClockBoard);
                                 }
                             } else {
                                 onSelect(template.board);
@@ -135,7 +135,7 @@ const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                                 LIVE
                             </div>
                         )}
-                        {renderPreview(template.isLive ? generateClockBoard() : template.board)}
+                        {renderPreview(template.isLive ? generateArtsyClockBoard() : template.board)}
                         <div className="flex items-center justify-between mt-2">
                             <span className={`text-[10px] font-mono truncate ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
                                 }`}>

@@ -36,7 +36,136 @@ const colorPattern = (id: string, name: string, pattern: string[], category: Tem
     return { id, name, category, board };
 };
 
-// Generate clock display with current time
+// Pixel-art digits (4 cols x 6 rows each) for artsy clock
+// 1 = white block, 0 = black/empty
+const PIXEL_DIGITS: { [key: string]: number[][] } = {
+    '0': [
+        [1, 1, 1, 1],
+        [1, 0, 0, 1],
+        [1, 0, 0, 1],
+        [1, 0, 0, 1],
+        [1, 0, 0, 1],
+        [1, 1, 1, 1],
+    ],
+    '1': [
+        [0, 0, 1, 1],
+        [0, 1, 1, 1],
+        [0, 0, 1, 1],
+        [0, 0, 1, 1],
+        [0, 0, 1, 1],
+        [0, 0, 1, 1],
+    ],
+    '2': [
+        [1, 1, 1, 1],
+        [0, 0, 0, 1],
+        [1, 1, 1, 1],
+        [1, 0, 0, 0],
+        [1, 0, 0, 0],
+        [1, 1, 1, 1],
+    ],
+    '3': [
+        [1, 1, 1, 1],
+        [0, 0, 0, 1],
+        [1, 1, 1, 1],
+        [0, 0, 0, 1],
+        [0, 0, 0, 1],
+        [1, 1, 1, 1],
+    ],
+    '4': [
+        [1, 0, 0, 1],
+        [1, 0, 0, 1],
+        [1, 1, 1, 1],
+        [0, 0, 0, 1],
+        [0, 0, 0, 1],
+        [0, 0, 0, 1],
+    ],
+    '5': [
+        [1, 1, 1, 1],
+        [1, 0, 0, 0],
+        [1, 1, 1, 1],
+        [0, 0, 0, 1],
+        [0, 0, 0, 1],
+        [1, 1, 1, 1],
+    ],
+    '6': [
+        [1, 1, 1, 1],
+        [1, 0, 0, 0],
+        [1, 1, 1, 1],
+        [1, 0, 0, 1],
+        [1, 0, 0, 1],
+        [1, 1, 1, 1],
+    ],
+    '7': [
+        [1, 1, 1, 1],
+        [0, 0, 0, 1],
+        [0, 0, 0, 1],
+        [0, 0, 0, 1],
+        [0, 0, 0, 1],
+        [0, 0, 0, 1],
+    ],
+    '8': [
+        [1, 1, 1, 1],
+        [1, 0, 0, 1],
+        [1, 1, 1, 1],
+        [1, 0, 0, 1],
+        [1, 0, 0, 1],
+        [1, 1, 1, 1],
+    ],
+    '9': [
+        [1, 1, 1, 1],
+        [1, 0, 0, 1],
+        [1, 1, 1, 1],
+        [0, 0, 0, 1],
+        [0, 0, 0, 1],
+        [1, 1, 1, 1],
+    ],
+    ':': [
+        [0, 0],
+        [0, 1],
+        [0, 0],
+        [0, 0],
+        [0, 1],
+        [0, 0],
+    ],
+};
+
+// Generate artsy big-digit clock using full board (HH:MM format)
+export const generateArtsyClockBoard = (): BoardState => {
+    const now = new Date();
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+
+    const board = createEmptyBoard();
+
+    // Layout: 22 cols total
+    // 1 margin + 4 digit + 1 space + 4 digit + 2 colon + 4 digit + 1 space + 4 digit + 1 margin = 22
+    // Positions: H1 at col 1, H2 at col 6, : at col 10, M1 at col 12, M2 at col 17
+
+    const drawDigit = (digit: string, startCol: number) => {
+        const pattern = PIXEL_DIGITS[digit];
+        if (!pattern) return;
+
+        for (let row = 0; row < ROWS && row < pattern.length; row++) {
+            for (let col = 0; col < pattern[row].length; col++) {
+                const boardCol = startCol + col;
+                if (boardCol >= 0 && boardCol < COLS && pattern[row][col] === 1) {
+                    board[row][boardCol] = { char: ' ', color: '[W]' };
+                }
+            }
+        }
+    };
+
+    // Draw HH:MM with equal spacing
+    drawDigit(hours[0], 1);     // First hour digit at col 1
+    drawDigit(hours[1], 6);     // Second hour digit at col 6
+    drawDigit(':', 10);         // Colon at col 10-11
+    drawDigit(minutes[0], 12);  // First minute digit at col 12
+    drawDigit(minutes[1], 17);  // Second minute digit at col 17
+
+    return board;
+};
+
+// Generate simple text clock display with current time
 export const generateClockBoard = (): BoardState => {
     const now = new Date();
     const hours = now.getHours().toString().padStart(2, '0');
@@ -51,14 +180,6 @@ export const generateClockBoard = (): BoardState => {
     const monthName = months[now.getMonth()];
     const date = now.getDate();
     const year = now.getFullYear();
-
-    // Format: 22 chars per row, 6 rows
-    // Row 0: Empty or decorative
-    // Row 1: Large time display
-    // Row 2: Seconds
-    // Row 3: Day of week
-    // Row 4: Month and Date
-    // Row 5: Year or empty
 
     const timeStr = `${hours}:${minutes}`;
     const secStr = `:${seconds}`;
@@ -161,12 +282,12 @@ export const PRESET_TEMPLATES: Template[] = [
         '         RR           ',
     ], 'icons'),
 
-    // Time - Live clock template
+    // Time - Artsy big-digit clock template (HH:MM using full board)
     {
         id: 'live-clock',
-        name: '24H Clock (Live)',
+        name: 'Big Clock (Live)',
         category: 'time',
-        board: generateClockBoard(),
+        board: generateArtsyClockBoard(),
         isLive: true,
     },
 ];

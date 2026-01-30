@@ -30,6 +30,19 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, link, onMode
 
     if (!isOpen) return null;
 
+    // ESC key to close modal
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+            onClose();
+        }
+    };
+
+    // Add ESC listener when modal opens
+    React.useEffect(() => {
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
     const protocol = window.location.protocol;
     const port = window.location.port ? `:${window.location.port}` : '';
     // Add mode parameter to URL so remote knows which service to use
@@ -41,7 +54,14 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, link, onMode
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4"
+            onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                    onClose();
+                }
+            }}
+        >
             <div className="bg-[#1a1a1a] border border-[#333] w-full max-w-sm rounded-xl p-8 shadow-2xl flex flex-col items-center">
                 <div className="flex justify-between items-center w-full mb-6">
                     <h2 className="text-white text-xl font-bold font-mono tracking-tighter">REMOTE PAIRING</h2>

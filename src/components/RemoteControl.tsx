@@ -45,6 +45,9 @@ const RemoteControl: React.FC<RemoteControlProps> = ({ mode }) => {
                 connectionService.connectToHost(roomId).catch((err) => {
                     addLog(`Connection error: ${err.message || err}`);
                 });
+            } else {
+                addLog("Error: Missing host room ID");
+                setStatus("error:missing_room_id");
             }
         };
 

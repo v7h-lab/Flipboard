@@ -13,8 +13,9 @@ export type RemoteCommand =
 const ICE_SERVERS = {
     iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' }
+        { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+        { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+        { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
     ]
 };
 
@@ -23,6 +24,7 @@ class PeerService {
     private conn: DataConnection | null = null;
     private onDataCallback: ((data: RemoteCommand) => void) | null = null;
     private onStatusCallback: ((status: string) => void) | null = null;
+    private initPromise: Promise<string> | null = null;
     public status: string = 'disconnected';
     public targetHostId: string = '';
 
@@ -43,13 +45,12 @@ class PeerService {
 
     // Initialize as HOST
     public initHost(): Promise<string> {
-        if (this.peer) {
-            this.log("Host already initialized: " + this.peer.id);
-            if (this.peer.id) this.updateStatus('host_ready');
-            return Promise.resolve(this.peer.id || '');
+        if (this.initPromise) {
+            this.log("Host initialization already in progress or completed");
+            return this.initPromise;
         }
 
-        return new Promise((resolve, reject) => {
+        this.initPromise = new Promise((resolve, reject) => {
             this.updateStatus('initializing_host');
             this.log('Creating HOST peer with ICE config...');
 
@@ -83,6 +84,7 @@ class PeerService {
             this.peer.on('error', (err) => {
                 this.log('Peer error: ' + err.type + ' - ' + err.message);
                 this.updateStatus('error:' + err.type);
+                this.initPromise = null;
                 reject(err);
             });
 
@@ -90,6 +92,8 @@ class PeerService {
                 this.log('Peer disconnected from server');
             });
         });
+
+        return this.initPromise;
     }
 
     // Initialize as REMOTE and connect to Host
@@ -209,6 +213,7 @@ class PeerService {
         if (this.peer) this.peer.destroy();
         this.peer = null;
         this.conn = null;
+        this.initPromise = null;
         this.status = 'disconnected';
     }
 }

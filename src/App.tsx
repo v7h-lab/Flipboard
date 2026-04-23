@@ -6,6 +6,7 @@ import QRCodeModal from './components/QRCodeModal';
 import RemoteControl from './components/RemoteControl';
 import { soundService } from './services/soundService';
 import { connectionService, RemoteCommand, ConnectionMode } from './services/connectionService';
+import { geminiService } from './services/geminiService';
 import { generateArtsyClockBoard } from './data/templates';
 
 const App: React.FC = () => {
@@ -69,6 +70,7 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
 
     const [isClockRunning, setIsClockRunning] = useState(false);
     const liveClockIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const liveQuoteIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const [lastLog, setLastLog] = useState<string>("Waiting...");
     const [relayStatus, setRelayStatus] = useState<string>("Initializing...");
@@ -93,6 +95,10 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
             clearInterval(liveClockIntervalRef.current);
             liveClockIntervalRef.current = null;
         }
+        if (liveQuoteIntervalRef.current) {
+            clearInterval(liveQuoteIntervalRef.current);
+            liveQuoteIntervalRef.current = null;
+        }
         setIsClockRunning(false);
     };
 
@@ -114,6 +120,38 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
         }, 1000);
 
         liveClockIntervalRef.current = interval;
+    };
+
+    const handleStartLiveQuote = async (keyword: string) => {
+        handleStopLiveClock(); // Stop any existing modes
+
+        setIsClockRunning(true); // Reuse this state to show the "STOP" button
+
+        // Initial fetch
+        try {
+            const board = await geminiService.generateQuote(keyword);
+            setBoard(board);
+            setMessage(boardToString(board));
+        } catch (error) {
+            console.error("Failed to fetch initial quote:", error);
+            handleStopLiveClock();
+            alert("Failed to fetch quote. Check console for details.");
+            return;
+        }
+
+        // Start interval (60 seconds)
+        const interval = setInterval(async () => {
+            try {
+                const board = await geminiService.generateQuote(keyword);
+                setBoard(board);
+                setMessage(boardToString(board));
+            } catch (error) {
+                console.error("Failed to fetch quote update:", error);
+                // Optionally alert on subsequent failures, or just log to avoid spam
+            }
+        }, 60000);
+
+        liveQuoteIntervalRef.current = interval;
     };
 
     useEffect(() => {
@@ -262,12 +300,14 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
                             ⏹ STOP CLOCK
                         </button>
                     ) : (
-                        <button
-                            onClick={() => setIsModalOpen(true)}
-                            className={`px-8 py-3 rounded-full font-mono font-bold tracking-wider shadow-lg active:scale-95 transition-all ${theme === 'dark' ? 'bg-white text-black hover:bg-gray-200' : 'bg-black text-white hover:bg-gray-800'}`}
-                        >
-                            COMPOSE MESSAGE
-                        </button>
+                        <>
+                            <button
+                                onClick={() => setIsModalOpen(true)}
+                                className={`px-8 py-3 rounded-full font-mono font-bold tracking-wider shadow-lg active:scale-95 transition-all ${theme === 'dark' ? 'bg-white text-black hover:bg-gray-200' : 'bg-black text-white hover:bg-gray-800'}`}
+                            >
+                                COMPOSE MESSAGE
+                            </button>
+                        </>
                     )}
                     <button
                         onClick={toggleFullscreen}
@@ -285,6 +325,7 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
                 onUpdate={(msg) => { handleStopLiveClock(); handleUpdate(msg); }}
                 onBoardUpdate={(b) => { handleStopLiveClock(); handleBoardUpdate(b); }}
                 onStartLiveClock={handleStartLiveClock}
+                onStartLiveQuote={handleStartLiveQuote}
                 currentMessage={message}
                 currentBoard={board}
                 theme={theme}

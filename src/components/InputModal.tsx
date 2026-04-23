@@ -37,10 +37,10 @@ const InputModal: React.FC<InputModalProps> = ({
     const [board, setBoard] = useState<BoardState>(currentBoard || stringToBoard(currentMessage));
     const [soundProfile, setSoundProfile] = useState<'loud' | 'subtle'>(soundService.getProfile());
     const [isGenerating, setIsGenerating] = useState(false);
-    const [aiPrompt, setAiPrompt] = useState('');
-    const [showAiPrompt, setShowAiPrompt] = useState(false);
-    const [showGridAiPrompt, setShowGridAiPrompt] = useState(false);
-    const [gridAiPrompt, setGridAiPrompt] = useState('');
+    // const [aiPrompt, setAiPrompt] = useState('');
+    // const [showAiPrompt, setShowAiPrompt] = useState(false);
+    // const [showGridAiPrompt, setShowGridAiPrompt] = useState(false);
+    // const [gridAiPrompt, setGridAiPrompt] = useState('');
 
     // Live Data State
     const [showLivePrompt, setShowLivePrompt] = useState(false);
@@ -136,7 +136,7 @@ const InputModal: React.FC<InputModalProps> = ({
         soundService.playClick();
     };
 
-    const handleAiGenerate = async () => {
+    /* const handleAiGenerate = async () => {
         if (!aiPrompt.trim()) return;
 
         setIsGenerating(true);
@@ -180,9 +180,9 @@ const InputModal: React.FC<InputModalProps> = ({
         } finally {
             setIsGenerating(false);
         }
-    };
+    }; */
 
-    const handleGridAiGenerate = async () => {
+    /* const handleGridAiGenerate = async () => {
         if (!gridAiPrompt.trim()) return;
 
         setIsGenerating(true);
@@ -208,7 +208,7 @@ const InputModal: React.FC<InputModalProps> = ({
         } finally {
             setIsGenerating(false);
         }
-    };
+    }; */
 
 
 

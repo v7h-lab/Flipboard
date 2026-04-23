@@ -28,6 +28,20 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, link, onMode
         }
     }, [link]);
 
+    // ESC key to close modal - must be before early return (rules of hooks)
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen, onClose]);
+
     if (!isOpen) return null;
 
     const protocol = window.location.protocol;
@@ -41,7 +55,14 @@ const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, link, onMode
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4"
+            onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                    onClose();
+                }
+            }}
+        >
             <div className="bg-[#1a1a1a] border border-[#333] w-full max-w-sm rounded-xl p-8 shadow-2xl flex flex-col items-center">
                 <div className="flex justify-between items-center w-full mb-6">
                     <h2 className="text-white text-xl font-bold font-mono tracking-tighter">REMOTE PAIRING</h2>

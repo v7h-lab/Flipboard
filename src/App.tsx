@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { COLS, TOTAL_BITS } from './constants';
+import React, { useState, useEffect, useRef } from 'react';
+import { COLS, TOTAL_BITS, BoardState, stringToBoard, boardToString, createEmptyBoard } from './constants';
 import SplitFlap from './components/SplitFlap';
 import InputModal from './components/InputModal';
 import QRCodeModal from './components/QRCodeModal';
 import RemoteControl from './components/RemoteControl';
 import { soundService } from './services/soundService';
 import { connectionService, RemoteCommand, ConnectionMode } from './services/connectionService';
+import { geminiService } from './services/geminiService';
+import { generateArtsyClockBoard } from './data/templates';
 
 const App: React.FC = () => {
     const [isRemoteMode, setIsRemoteMode] = useState(false);
@@ -59,11 +61,16 @@ interface HostAppProps {
 
 const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange }) => {
     const [message, setMessage] = useState<string>("".padEnd(TOTAL_BITS, " "));
+    const [board, setBoard] = useState<BoardState>(createEmptyBoard());
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isQRModalOpen, setIsQRModalOpen] = useState(false);
     const [hasStarted, setHasStarted] = useState(false);
     const [theme, setTheme] = useState<'dark' | 'light'>('dark');
     const [isFullscreen, setIsFullscreen] = useState(false);
+
+    const [isClockRunning, setIsClockRunning] = useState(false);
+    const liveClockIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const liveQuoteIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const [lastLog, setLastLog] = useState<string>("Waiting...");
     const [relayStatus, setRelayStatus] = useState<string>("Initializing...");
@@ -71,7 +78,80 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
     const WELCOME_MSG = "DIGITAL FLIPBOARD     READY TO FLIP         TYPE TO START...      ".padEnd(TOTAL_BITS, " ");
 
     const handleUpdate = (newMsg: string) => {
-        setMessage(newMsg.toUpperCase());
+        handleStopLiveClock();
+        const msg = newMsg.toUpperCase();
+        setMessage(msg);
+        setBoard(stringToBoard(msg));
+    };
+
+    const handleBoardUpdate = (newBoard: BoardState) => {
+        handleStopLiveClock();
+        setBoard(newBoard);
+        setMessage(boardToString(newBoard));
+    };
+
+    const handleStopLiveClock = () => {
+        if (liveClockIntervalRef.current) {
+            clearInterval(liveClockIntervalRef.current);
+            liveClockIntervalRef.current = null;
+        }
+        if (liveQuoteIntervalRef.current) {
+            clearInterval(liveQuoteIntervalRef.current);
+            liveQuoteIntervalRef.current = null;
+        }
+        setIsClockRunning(false);
+    };
+
+    const handleStartLiveClock = (generator: () => BoardState) => {
+        // Stop any existing clock
+        handleStopLiveClock();
+
+        // Start clock mode - update every second
+        setHasStarted(true);
+        setIsClockRunning(true);
+        const clockBoard = generator();
+        setBoard(clockBoard);
+        setMessage(boardToString(clockBoard));
+
+        const interval = setInterval(() => {
+            const newBoard = generator();
+            setBoard(newBoard);
+            setMessage(boardToString(newBoard));
+        }, 1000);
+
+        liveClockIntervalRef.current = interval;
+    };
+
+    const handleStartLiveQuote = async (keyword: string) => {
+        handleStopLiveClock(); // Stop any existing modes
+
+        setIsClockRunning(true); // Reuse this state to show the "STOP" button
+
+        // Initial fetch
+        try {
+            const board = await geminiService.generateQuote(keyword);
+            setBoard(board);
+            setMessage(boardToString(board));
+        } catch (error) {
+            console.error("Failed to fetch initial quote:", error);
+            handleStopLiveClock();
+            alert("Failed to fetch quote. Check console for details.");
+            return;
+        }
+
+        // Start interval (60 seconds)
+        const interval = setInterval(async () => {
+            try {
+                const board = await geminiService.generateQuote(keyword);
+                setBoard(board);
+                setMessage(boardToString(board));
+            } catch (error) {
+                console.error("Failed to fetch quote update:", error);
+                // Optionally alert on subsequent failures, or just log to avoid spam
+            }
+        }, 60000);
+
+        liveQuoteIntervalRef.current = interval;
     };
 
     useEffect(() => {
@@ -79,7 +159,13 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
             const logIdx = new Date().toLocaleTimeString();
             setLastLog(`[${logIdx}] ${cmd.type}`);
 
+            // Stop live clock when receiving any update from remote
+            if (cmd.type === 'UPDATE_MESSAGE' || cmd.type === 'UPDATE_BOARD') {
+                handleStopLiveClock();
+            }
+
             if (cmd.type === 'UPDATE_MESSAGE') handleUpdate(cmd.payload);
+            if (cmd.type === 'UPDATE_BOARD') setBoard(cmd.payload);
             if (cmd.type === 'SET_THEME') {
                 setTheme(cmd.payload);
                 soundService.playClick();
@@ -87,6 +173,14 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
             if (cmd.type === 'SET_SOUND') {
                 soundService.setProfile(cmd.payload);
                 soundService.playClick();
+            }
+            if (cmd.type === 'START_LIVE_CLOCK') {
+                // Start live clock with the specified theme
+                const clockTheme = cmd.payload;
+                handleStartLiveClock(() => generateArtsyClockBoard(clockTheme));
+            }
+            if (cmd.type === 'STOP_LIVE_CLOCK') {
+                handleStopLiveClock();
             }
         });
 
@@ -169,15 +263,21 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
                         width: 'min(95vw, 1200px)',
                     }}
                 >
-                    {Array.from({ length: TOTAL_BITS }).map((_, i) => (
-                        <div key={i} className="aspect-[4/6] relative">
-                            <SplitFlap
-                                targetChar={message[i] || " "}
-                                delay={(i % COLS) * 50 + (Math.floor(i / COLS) * 20)}
-                                theme={theme}
-                            />
-                        </div>
-                    ))}
+                    {board.map((row, rowIdx) =>
+                        row.map((cell, colIdx) => {
+                            const i = rowIdx * COLS + colIdx;
+                            return (
+                                <div key={i} className="aspect-[4/6] relative">
+                                    <SplitFlap
+                                        targetChar={cell.char || " "}
+                                        color={cell.color}
+                                        delay={(colIdx) * 50 + (rowIdx * 20)}
+                                        theme={theme}
+                                    />
+                                </div>
+                            );
+                        })
+                    )}
                 </div>
             </div>
 
@@ -192,12 +292,23 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
                         <span className="hidden md:inline">REMOTE</span>
                     </button>
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className={`px-8 py-3 rounded-full font-mono font-bold tracking-wider shadow-lg active:scale-95 transition-all ${theme === 'dark' ? 'bg-white text-black hover:bg-gray-200' : 'bg-black text-white hover:bg-gray-800'}`}
-                    >
-                        COMPOSE MESSAGE
-                    </button>
+                    {isClockRunning ? (
+                        <button
+                            onClick={handleStopLiveClock}
+                            className="px-8 py-3 rounded-full font-mono font-bold tracking-wider shadow-lg active:scale-95 transition-all bg-red-600 text-white hover:bg-red-500 animate-pulse"
+                        >
+                            ⏹ STOP CLOCK
+                        </button>
+                    ) : (
+                        <>
+                            <button
+                                onClick={() => setIsModalOpen(true)}
+                                className={`px-8 py-3 rounded-full font-mono font-bold tracking-wider shadow-lg active:scale-95 transition-all ${theme === 'dark' ? 'bg-white text-black hover:bg-gray-200' : 'bg-black text-white hover:bg-gray-800'}`}
+                            >
+                                COMPOSE MESSAGE
+                            </button>
+                        </>
+                    )}
                     <button
                         onClick={toggleFullscreen}
                         className={`p-3 rounded-full font-mono font-bold tracking-wider shadow-lg active:scale-95 transition-all ${theme === 'dark' ? 'bg-[#222] text-white hover:bg-[#333]' : 'bg-white text-black hover:bg-gray-200'}`}
@@ -211,8 +322,12 @@ const HostApp: React.FC<HostAppProps> = ({ roomId, connectionMode, onModeChange 
             <InputModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                onUpdate={handleUpdate}
+                onUpdate={(msg) => { handleStopLiveClock(); handleUpdate(msg); }}
+                onBoardUpdate={(b) => { handleStopLiveClock(); handleBoardUpdate(b); }}
+                onStartLiveClock={handleStartLiveClock}
+                onStartLiveQuote={handleStartLiveQuote}
                 currentMessage={message}
+                currentBoard={board}
                 theme={theme}
                 setTheme={setTheme}
             />

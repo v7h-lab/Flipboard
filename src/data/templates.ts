@@ -3,7 +3,7 @@ import { BoardState, createEmptyBoard, ROWS, COLS, stringToBoard } from '../cons
 export interface Template {
     id: string;
     name: string;
-    category: 'greetings' | 'patterns' | 'icons' | 'time' | 'custom';
+    category: 'greetings' | 'quotes' | 'flags' | 'patterns' | 'icons' | 'time' | 'live' | 'custom';
     board: BoardState;
     isLive?: boolean; // For templates that update dynamically
 }
@@ -220,6 +220,179 @@ export const PRESET_TEMPLATES: Template[] = [
         '                      ' +
         '                      '),
 
+    // Quotes
+    t('quote-jobs', 'Steve Jobs', 'quotes',
+        '                      ' +
+        '    STAY HUNGRY,      ' +
+        '    STAY FOOLISH.     ' +
+        '                      ' +
+        '     - STEVE JOBS     ' +
+        '                      '),
+
+    t('quote-lincoln', 'Lincoln', 'quotes',
+        '   WHATEVER YOU ARE   ' +
+        '                      ' +
+        '    BE A GOOD ONE.    ' +
+        '                      ' +
+        '     - A. LINCOLN     ' +
+        '                      '),
+
+    t('quote-einstein', 'Einstein', 'quotes',
+        '   IMAGINATION IS     ' +
+        '   MORE IMPORTANT     ' +
+        '   THAN KNOWLEDGE.    ' +
+        '                      ' +
+        '     - EINSTEIN       ' +
+        '                      '),
+
+    t('quote-yoda', 'Yoda', 'quotes',
+        '                      ' +
+        '    DO OR DO NOT.     ' +
+        '  THERE IS NO TRY.    ' +
+        '                      ' +
+        '       - YODA         ' +
+        '                      '),
+
+    t('quote-terminator', 'Terminator', 'quotes',
+        '                      ' +
+        '    I\'LL BE BACK.     ' +
+        '                      ' +
+        '    - TERMINATOR      ' +
+        '                      ' +
+        '                      '),
+
+    t('quote-nike', 'Nike', 'quotes',
+        '                      ' +
+        '     JUST DO IT.      ' +
+        '                      ' +
+        '       - NIKE         ' +
+        '                      ' +
+        '                      '),
+
+    t('quote-ferris', 'Ferris Bueller', 'quotes',
+        '     LIFE MOVES       ' +
+        '    PRETTY FAST.      ' +
+        '                      ' +
+        '    - F. BUELLER      ' +
+        '                      ' +
+        '                      '),
+
+    t('quote-batman', 'Batman', 'quotes',
+        '                      ' +
+        '     I\'M BATMAN.      ' +
+        '                      ' +
+        '       - BATMAN       ' +
+        '                      ' +
+        '                      '),
+
+    t('quote-bobross', 'Bob Ross', 'quotes',
+        '    NO MISTAKES,      ' +
+        '     JUST HAPPY       ' +
+        '     ACCIDENTS.       ' +
+        '                      ' +
+        '     - BOB ROSS       ' +
+        '                      '),
+
+    t('quote-matrix', 'The Matrix', 'quotes',
+        '                      ' +
+        '      THERE IS        ' +
+        '      NO SPOON.       ' +
+        '                      ' +
+        '    - THE MATRIX      ' +
+        '                      '),
+
+    // Flags
+    colorPattern('flag-india', 'India', [
+        'OOOOOOOOOOOOOOOOOOOOOO',
+        'OOOOOOOOOOOOOOOOOOOOOO',
+        'WWWWWWWWWBBWWWWWWWWWWW',
+        'WWWWWWWWWBBWWWWWWWWWWW',
+        'GGGGGGGGGGGGGGGGGGGGGG',
+        'GGGGGGGGGGGGGGGGGGGGGG',
+    ], 'flags'),
+
+    colorPattern('flag-china', 'China', [
+        'RRRRRRRRRRRRRRRRRRRRRR',
+        'RYYRRRRRRRRRRRRRRRRRRR',
+        'RYYRRRRRRRRRRRRRRRRRRR',
+        'RRRRRRRRRRRRRRRRRRRRRR',
+        'RRRRRRRRRRRRRRRRRRRRRR',
+        'RRRRRRRRRRRRRRRRRRRRRR',
+    ], 'flags'),
+
+    colorPattern('flag-usa', 'USA', [
+        'BBBBBBBBBRRRRRRRRRRRRR',
+        'BBBBBBBBBWWWWWWWWWWWWW',
+        'BBBBBBBBBRRRRRRRRRRRRR',
+        'BBBBBBBBBWWWWWWWWWWWWW',
+        'RRRRRRRRRRRRRRRRRRRRRR',
+        'WWWWWWWWWWWWWWWWWWWWWW',
+    ], 'flags'),
+
+    colorPattern('flag-canada', 'Canada', [
+        'RRRRRRWWWWWWWWWWRRRRRR',
+        'RRRRRRWWWWWWWWWWRRRRRR',
+        'RRRRRRWWWWRRWWWWRRRRRR',
+        'RRRRRRWWWWRRWWWWRRRRRR',
+        'RRRRRRWWWWWWWWWWRRRRRR',
+        'RRRRRRWWWWWWWWWWRRRRRR',
+    ], 'flags'),
+
+    colorPattern('flag-indonesia', 'Indonesia', [
+        'RRRRRRRRRRRRRRRRRRRRRR',
+        'RRRRRRRRRRRRRRRRRRRRRR',
+        'RRRRRRRRRRRRRRRRRRRRRR',
+        'WWWWWWWWWWWWWWWWWWWWWW',
+        'WWWWWWWWWWWWWWWWWWWWWW',
+        'WWWWWWWWWWWWWWWWWWWWWW',
+    ], 'flags'),
+
+    colorPattern('flag-brazil', 'Brazil', [
+        'GGGGGGGGGGGGGGGGGGGGGG',
+        'GGGGGGGGYYYYGGGGGGGGGG',
+        'GGGGGGGYYBBYYGGGGGGGGG',
+        'GGGGGGGYYBBYYGGGGGGGGG',
+        'GGGGGGGGYYYYGGGGGGGGGG',
+        'GGGGGGGGGGGGGGGGGGGGGG',
+    ], 'flags'),
+
+    colorPattern('flag-russia', 'Russia', [
+        'WWWWWWWWWWWWWWWWWWWWWW',
+        'WWWWWWWWWWWWWWWWWWWWWW',
+        'BBBBBBBBBBBBBBBBBBBBBB',
+        'BBBBBBBBBBBBBBBBBBBBBB',
+        'RRRRRRRRRRRRRRRRRRRRRR',
+        'RRRRRRRRRRRRRRRRRRRRRR',
+    ], 'flags'),
+
+    colorPattern('flag-japan', 'Japan', [
+        'WWWWWWWWWWWWWWWWWWWWWW',
+        'WWWWWWWWWWWWWWWWWWWWWW',
+        'WWWWWWWWWRRWWWWWWWWWWW',
+        'WWWWWWWWWRRWWWWWWWWWWW',
+        'WWWWWWWWWWWWWWWWWWWWWW',
+        'WWWWWWWWWWWWWWWWWWWWWW',
+    ], 'flags'),
+
+    colorPattern('flag-mexico', 'Mexico', [
+        'GGGGGGGWWWWWWWRRRRRRRR',
+        'GGGGGGGWWWWWWWRRRRRRRR',
+        'GGGGGGGWWOWWWWRRRRRRRR',
+        'GGGGGGGWWWWWWWRRRRRRRR',
+        'GGGGGGGWWWWWWWRRRRRRRR',
+        'GGGGGGGWWWWWWWRRRRRRRR',
+    ], 'flags'),
+
+    colorPattern('flag-france', 'France', [
+        'BBBBBBBWWWWWWWRRRRRRRR',
+        'BBBBBBBWWWWWWWRRRRRRRR',
+        'BBBBBBBWWWWWWWRRRRRRRR',
+        'BBBBBBBWWWWWWWRRRRRRRR',
+        'BBBBBBBWWWWWWWRRRRRRRR',
+        'BBBBBBBWWWWWWWRRRRRRRR',
+        'BBBBBBBWWWWWWWRRRRRRRR',
+    ], 'flags'),
+
     t('happy-birthday', 'Happy Birthday', 'greetings',
         '                      ' +
         '        HAPPY         ' +
@@ -281,6 +454,31 @@ export const PRESET_TEMPLATES: Template[] = [
         '        RRRR          ',
         '         RR           ',
     ], 'icons'),
+
+    /*
+    // Live Data (Gemini)
+    {
+        id: 'live-dashboard',
+        name: 'Live Dashboard 📊',
+        category: 'live',
+        board: createEmptyBoard(),
+        isLive: true,
+    },
+    {
+        id: 'live-quote',
+        name: 'Live AI Quote 💬',
+        category: 'live',
+        board: createEmptyBoard(),
+        isLive: true,
+    },
+    {
+        id: 'live-quote-ref', // Duplicate for ease of access in Quotes tab
+        name: 'Live AI Quote 💬',
+        category: 'quotes',
+        board: createEmptyBoard(),
+        isLive: true,
+    },
+    */
 
     // Time - Artsy big-digit clock template (HH:MM using full board)
     {

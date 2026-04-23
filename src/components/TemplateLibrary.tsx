@@ -3,8 +3,9 @@ import { Template, PRESET_TEMPLATES, templateService, generateArtsyClockBoard } 
 import { BoardState, COLS, COLORS } from '../constants';
 
 interface TemplateLibraryProps {
-    onSelect: (board: BoardState) => void;
+    onSelect: (board: BoardState, id?: string) => void;
     onSelectLive?: (generator: () => BoardState) => void; // For live templates
+    onSelectGemini?: (id: string) => void; // For Gemini live templates
     onSaveCustom?: (name: string, board: BoardState) => void;
     currentBoard?: BoardState;
     theme?: 'dark' | 'light';
@@ -13,15 +14,19 @@ interface TemplateLibraryProps {
 const CATEGORIES = [
     { id: 'all', name: 'All' },
     { id: 'greetings', name: 'Greetings' },
+    { id: 'quotes', name: 'Quotes' },
+    { id: 'flags', name: 'Flags' },
     { id: 'patterns', name: 'Patterns' },
     { id: 'icons', name: 'Icons' },
     { id: 'time', name: 'Time' },
+    // { id: 'live', name: 'Live Data' },
     { id: 'custom', name: 'My Templates' },
 ] as const;
 
 const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
     onSelect,
     onSelectLive,
+    onSelectGemini,
     onSaveCustom,
     currentBoard,
     theme = 'dark'
@@ -116,13 +121,13 @@ const TemplateLibrary: React.FC<TemplateLibraryProps> = ({
                     <button
                         key={template.id}
                         onClick={() => {
-                            if (template.isLive && onSelectLive) {
+                            if (template.id === 'live-dashboard' && onSelectGemini) {
+                                onSelectGemini(template.id);
+                            } else if (template.id === 'live-clock' && onSelectLive) {
                                 // For live templates, pass a generator that uses the current theme
-                                if (template.id === 'live-clock') {
-                                    onSelectLive(() => generateArtsyClockBoard(theme));
-                                }
+                                onSelectLive(() => generateArtsyClockBoard(theme));
                             } else {
-                                onSelect(template.board);
+                                onSelect(template.board, template.id);
                             }
                         }}
                         className={`p-2 rounded-lg transition-all hover:scale-105 relative ${theme === 'dark'

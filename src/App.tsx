@@ -34,6 +34,10 @@ const App: React.FC = () => {
                 setRoomId(id);
             });
         }
+
+        return () => {
+            connectionService.destroyAll();
+        };
     }, []);
 
     const handleModeChange = async (mode: ConnectionMode) => {
